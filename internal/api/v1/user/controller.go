@@ -1,0 +1,109 @@
+package user
+
+import (
+	"cloudque/internal/middleware"
+	"cloudque/internal/model/dto/request"
+	"cloudque/internal/service"
+	"cloudque/pkg/response"
+	"github.com/gin-gonic/gin"
+)
+
+// UserController 用户控制器
+type UserController struct {
+	userService service.UserService
+}
+
+// NewUserController 创建用户控制器
+func NewUserController(userService service.UserService) *UserController {
+	return &UserController{
+		userService: userService,
+	}
+}
+
+// GetProfile 获取当前用户信息
+// @Summary 获取当前用户信息
+// @Description 获取当前登录用户的详细信息
+// @Tags 用户
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Success 200 {object} response.Response
+// @Router /api/v1/user/profile [get]
+func (ctrl *UserController) GetProfile(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		response.Unauthorized(c, "用户未登录")
+		return
+	}
+
+	user, err := ctrl.userService.GetUserByID(userID)
+	if err != nil {
+		response.BizError(c, err)
+		return
+	}
+
+	userResp := ctrl.userService.GetUserResponse(user)
+	response.Success(c, userResp)
+}
+
+// UpdateProfile 更新用户信息
+// @Summary 更新用户信息
+// @Description 更新当前登录用户的信息
+// @Tags 用户
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param request body request.UpdateUserRequest true "更新信息"
+// @Success 200 {object} response.Response
+// @Router /api/v1/user/profile [put]
+func (ctrl *UserController) UpdateProfile(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		response.Unauthorized(c, "用户未登录")
+		return
+	}
+
+	var req request.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	if err := ctrl.userService.UpdateUser(userID, &req); err != nil {
+		response.BizError(c, err)
+		return
+	}
+
+	response.Success(c, nil)
+}
+
+// ChangePassword 修改密码
+// @Summary 修改密码
+// @Description 修改当前登录用户的密码
+// @Tags 用户
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param request body request.ChangePasswordRequest true "密码信息"
+// @Success 200 {object} response.Response
+// @Router /api/v1/user/password [post]
+func (ctrl *UserController) ChangePassword(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		response.Unauthorized(c, "用户未登录")
+		return
+	}
+
+	var req request.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	if err := ctrl.userService.ChangePassword(userID, &req); err != nil {
+		response.BizError(c, err)
+		return
+	}
+
+	response.Success(c, nil)
+}
