@@ -32,7 +32,7 @@ CloudQue 采用标准的 MVC 三层架构设计，实现了清晰的分层结构
 
 **示例**:
 ```go
-func (ctrl *UserController) GetProfile(c *gin.Context) {
+func (ctrl *Controller) GetProfile(c *gin.Context) {
     userID := middleware.GetUserID(c)
     user, err := ctrl.userService.GetUserByID(userID)
     // ...
@@ -88,8 +88,8 @@ func (r *userRepository) FindByID(id uint) (*entity.User, error) {
 
 ```go
 // Controller 注入 Service
-func NewUserController(userService service.UserService) *UserController {
-    return &UserController{userService: userService}
+func NewController(userService service.UserService) *Controller {
+    return &Controller{userService: userService}
 }
 
 // Service 注入 Repository

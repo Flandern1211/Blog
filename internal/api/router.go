@@ -5,13 +5,14 @@ import (
 	"cloudque/internal/api/v1/user"
 	"cloudque/internal/middleware"
 	"cloudque/internal/service"
+
 	"github.com/gin-gonic/gin"
 )
 
 // Router 路由
 type Router struct {
-	userCtrl *user.UserController
-	authCtrl *auth.AuthController
+	userCtrl *user.Controller
+	authCtrl *auth.Controller
 }
 
 // NewRouter 创建路由
@@ -20,8 +21,8 @@ func NewRouter(
 	authService service.AuthService,
 ) *Router {
 	return &Router{
-		userCtrl: user.NewUserController(userService),
-		authCtrl: auth.NewAuthController(authService, userService),
+		userCtrl: user.NewController(userService),
+		authCtrl: auth.NewController(authService, userService),
 	}
 }
 

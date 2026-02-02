@@ -5,7 +5,7 @@ import (
 )
 
 // RegisterRoutes 注册认证路由
-func (ctrl *AuthController) RegisterRoutes(r *gin.RouterGroup) {
+func (ctrl *Controller) RegisterRoutes(r *gin.RouterGroup) {
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/register", ctrl.Register)

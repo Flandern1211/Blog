@@ -4,24 +4,25 @@ import (
 	"cloudque/internal/model/dto/request"
 	"cloudque/internal/service"
 	"cloudque/pkg/response"
+
 	"github.com/gin-gonic/gin"
 )
 
-// AuthController 认证控制器
-type AuthController struct {
+// Controller 认证控制器
+type Controller struct {
 	authService service.AuthService
 	userService service.UserService
 }
 
-// NewAuthController 创建认证控制器
-func NewAuthController(authService service.AuthService, userService service.UserService) *AuthController {
-	return &AuthController{
+// NewController 创建认证控制器
+func NewController(authService service.AuthService, userService service.UserService) *Controller {
+	return &Controller{
 		authService: authService,
 		userService: userService,
 	}
 }
 
-func (ctrl *AuthController) Register(c *gin.Context) {
+func (ctrl *Controller) Register(c *gin.Context) {
 	var req request.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
@@ -45,7 +46,7 @@ func (ctrl *AuthController) Register(c *gin.Context) {
 // @Param request body request.LoginRequest true "登录信息"
 // @Success 200 {object} response.Response{data=response.LoginResponse}
 // @Router /api/v1/auth/login [post]
-func (ctrl *AuthController) Login(c *gin.Context) {
+func (ctrl *Controller) Login(c *gin.Context) {
 	var req request.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
@@ -70,7 +71,7 @@ func (ctrl *AuthController) Login(c *gin.Context) {
 // @Param request body request.RefreshTokenRequest true "Token"
 // @Success 200 {object} response.Response
 // @Router /api/v1/auth/refresh [post]
-func (ctrl *AuthController) RefreshToken(c *gin.Context) {
+func (ctrl *Controller) RefreshToken(c *gin.Context) {
 	var req request.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())

@@ -213,8 +213,8 @@ func (ctrl *ProductController) RegisterRoutes(r *gin.RouterGroup) {
 
 ```go
 type Router struct {
-    userCtrl    *user.UserController
-    authCtrl    *auth.AuthController
+    userCtrl    *user.Controller
+    authCtrl    *auth.Controller
     productCtrl *product.ProductController  // 新增
 }
 
@@ -224,8 +224,8 @@ func NewRouter(
     productService service.ProductService,  // 新增
 ) *Router {
     return &Router{
-        userCtrl:    user.NewUserController(userService),
-        authCtrl:    auth.NewAuthController(authService, userService),
+        userCtrl:    user.NewController(userService),
+        authCtrl:    auth.NewController(authService, userService),
         productCtrl: product.NewProductController(productService),  // 新增
     }
 }

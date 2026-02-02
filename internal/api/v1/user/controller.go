@@ -5,17 +5,18 @@ import (
 	"cloudque/internal/model/dto/request"
 	"cloudque/internal/service"
 	"cloudque/pkg/response"
+
 	"github.com/gin-gonic/gin"
 )
 
-// UserController 用户控制器
-type UserController struct {
+// Controller 用户控制器
+type Controller struct {
 	userService service.UserService
 }
 
-// NewUserController 创建用户控制器
-func NewUserController(userService service.UserService) *UserController {
-	return &UserController{
+// NewController 创建用户控制器
+func NewController(userService service.UserService) *Controller {
+	return &Controller{
 		userService: userService,
 	}
 }
@@ -29,7 +30,7 @@ func NewUserController(userService service.UserService) *UserController {
 // @Security Bearer
 // @Success 200 {object} response.Response
 // @Router /api/v1/user/profile [get]
-func (ctrl *UserController) GetProfile(c *gin.Context) {
+func (ctrl *Controller) GetProfile(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
 		response.Unauthorized(c, "用户未登录")
@@ -56,7 +57,7 @@ func (ctrl *UserController) GetProfile(c *gin.Context) {
 // @Param request body request.UpdateUserRequest true "更新信息"
 // @Success 200 {object} response.Response
 // @Router /api/v1/user/profile [put]
-func (ctrl *UserController) UpdateProfile(c *gin.Context) {
+func (ctrl *Controller) UpdateProfile(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
 		response.Unauthorized(c, "用户未登录")
@@ -87,7 +88,7 @@ func (ctrl *UserController) UpdateProfile(c *gin.Context) {
 // @Param request body request.ChangePasswordRequest true "密码信息"
 // @Success 200 {object} response.Response
 // @Router /api/v1/user/password [post]
-func (ctrl *UserController) ChangePassword(c *gin.Context) {
+func (ctrl *Controller) ChangePassword(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
 		response.Unauthorized(c, "用户未登录")

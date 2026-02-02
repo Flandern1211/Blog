@@ -6,7 +6,7 @@ import (
 )
 
 // RegisterRoutes 注册用户路由
-func (ctrl *UserController) RegisterRoutes(r *gin.RouterGroup) {
+func (ctrl *Controller) RegisterRoutes(r *gin.RouterGroup) {
 	userGroup := r.Group("/user")
 	userGroup.Use(middleware.Auth())
 	{
