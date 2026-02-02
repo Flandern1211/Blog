@@ -55,8 +55,7 @@ cloudque/
 │   └── utils/                         # 工具函数
 ├── configs/                           # 配置文件
 │   ├── config.yaml                    # 主配置
-│   ├── config.dev.yaml                # 开发环境
-│   └── config.prod.yaml               # 生产环境
+│   └── config.yaml.example            # 配置示例
 ├── scripts/                           # 脚本
 │   └── migrate.sql                    # 数据库迁移
 ├── docs/                              # 项目文档
@@ -93,6 +92,7 @@ go mod tidy
 
 3. 配置数据库
 ```bash
+# config.yaml.example重命名 config.yaml
 # 编辑 configs/config.yaml，修改数据库连接信息
 # 或使用环境变量覆盖
 export MYSQL_PASSWORD=your_password
