@@ -1,7 +1,7 @@
 .PHONY: all build run test clean migrate help
 
 # 变量定义
-APP_NAME=cloudque-api
+APP_NAME=blog-api
 BUILD_DIR=bin
 MAIN_PATH=cmd/server/main.go
 

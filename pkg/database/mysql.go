@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"cloudque/pkg/config"
-	"cloudque/pkg/logger"
+	"blog/pkg/config"
+	"blog/pkg/logger"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

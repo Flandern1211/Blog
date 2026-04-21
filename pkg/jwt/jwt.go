@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"cloudque/pkg/config"
+	"blog/pkg/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -24,7 +24,7 @@ func GenerateToken(userID uint, username string) (string, error) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(cfg.ExpireHours * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "cloudque",
+			Issuer:    "blog",
 		},
 	}
 

@@ -3,7 +3,7 @@ package middleware
 import (
 	"time"
 
-	"cloudque/pkg/logger"
+	"blog/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

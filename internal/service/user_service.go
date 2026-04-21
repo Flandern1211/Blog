@@ -1,11 +1,11 @@
 package service
 
 import (
-	"cloudque/internal/model/dto/request"
-	"cloudque/internal/model/dto/response"
-	"cloudque/internal/model/entity"
-	"cloudque/internal/repository"
-	bizerrors "cloudque/pkg/errors"
+	"blog/internal/model/dto/request"
+	"blog/internal/model/dto/response"
+	"blog/internal/model/entity"
+	"blog/internal/repository"
+	bizerrors "blog/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 

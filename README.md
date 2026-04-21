@@ -1,4 +1,4 @@
-# CloudQue API
+# blog API
 
 基于 Go 语言和 Gin 框架构建的标准三层 MVC 架构后端项目基础框架。
 
@@ -27,7 +27,7 @@
 ## 项目结构
 
 ```
-cloudque/
+blog/
 ├── cmd/
 │   └── server/
 │       └── main.go                    # 主程序入口
@@ -81,8 +81,8 @@ cloudque/
 
 1. 克隆项目
 ```bash
-git clone https://cloudque.git
-cd cloudque
+git clone https://blog.git
+cd blog
 ```
 
 2. 安装依赖

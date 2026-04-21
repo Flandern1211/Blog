@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"cloudque/pkg/config"
+	"blog/pkg/config"
 )
 
 // InitFromConfig 从全局配置初始化日志

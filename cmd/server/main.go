@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"cloudque/internal/app"
+	"blog/internal/app"
 )
 
 func main() {

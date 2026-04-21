@@ -1,7 +1,7 @@
 package response
 
 import (
-	"cloudque/pkg/errors"
+	"blog/pkg/errors"
 	"github.com/gin-gonic/gin"
 )
 

@@ -25,7 +25,7 @@ func Load(configPath string) (*Config, error) {
 	}
 
 	// 环境变量前缀
-	v.SetEnvPrefix("CLOUDQUE")
+	v.SetEnvPrefix("blog")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 

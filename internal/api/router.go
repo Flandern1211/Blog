@@ -1,10 +1,10 @@
 package api
 
 import (
-	"cloudque/internal/api/v1/auth"
-	"cloudque/internal/api/v1/user"
-	"cloudque/internal/middleware"
-	"cloudque/internal/service"
+	"blog/internal/api/v1/auth"
+	"blog/internal/api/v1/user"
+	"blog/internal/middleware"
+	"blog/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,7 +37,7 @@ func (r *Router) Setup(engine *gin.Engine) {
 	engine.GET("/api/v1/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
-			"message": "CloudQue API is running",
+			"message": "blog API is running",
 		})
 	})
 

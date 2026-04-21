@@ -1,6 +1,6 @@
 # 应用配置
 app:
-  name: "cloudque-api"
+  name: "blog-api"
   version: "1.0.0"
   mode: "debug"  # debug, release, test
   port: 8080
@@ -12,7 +12,7 @@ database:
     port: 3306
     username: "root"
     password: ""
-    database: "cloudque"
+    database: "blog"
     max_idle_conns: 10
     max_open_conns: 100
   redis:

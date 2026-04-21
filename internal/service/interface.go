@@ -1,9 +1,9 @@
 package service
 
 import (
-	"cloudque/internal/model/dto/request"
-	"cloudque/internal/model/dto/response"
-	"cloudque/internal/model/entity"
+	"blog/internal/model/dto/request"
+	"blog/internal/model/dto/response"
+	"blog/internal/model/entity"
 )
 
 // UserService 用户服务接口
