@@ -5,8 +5,11 @@ import (
 	"log"
 	"strings"
 
+	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 )
+
+type RedisClient = redis.Client
 
 type Config struct {
 	Server struct {
@@ -53,7 +56,7 @@ type Config struct {
 		Host     string // 服务器地址, 例如 smtp.qq.com 前往要发邮件的邮箱查看其 smtp 协议
 		Port     int    // 前往要发邮件的邮箱查看其 smtp 协议端口, 大多为 465
 		SmtpPass string // 邮箱密钥 不是密码是开启smtp后给你的密钥
-		SmtpUser string // 邮箱账号 
+		SmtpUser string // 邮箱账号
 	}
 	Captcha struct {
 		SendEmail  bool // 是否通过邮箱发送验证码
@@ -104,7 +107,6 @@ func ReadConfig(path string) *Config {
 	log.Println("配置文件内容加载成功: ", path)
 	return Conf
 }
-
 
 // 数据库类型
 func (*Config) DbType() string {

@@ -8,22 +8,6 @@ definitions:
     required:
     - name
     type: object
-  handler.AddOrEditLinkReq:
-    properties:
-      address:
-        type: string
-      avatar:
-        type: string
-      id:
-        type: integer
-      intro:
-        type: string
-      name:
-        type: string
-    required:
-    - address
-    - name
-    type: object
   handler.AddOrEditPageReq:
     properties:
       cover:
@@ -60,23 +44,6 @@ definitions:
         description: 分页数据
         items:
           $ref: '#/definitions/model.CategoryVO'
-        type: array
-      page_num:
-        description: 每页条数
-        type: integer
-      page_size:
-        description: 上次页数
-        type: integer
-      total:
-        description: 总条数
-        type: integer
-    type: object
-  handler.PageResult-model_FriendLink:
-    properties:
-      page_data:
-        description: 分页数据
-        items:
-          $ref: '#/definitions/model.FriendLink'
         type: array
       page_num:
         description: 每页条数
@@ -220,19 +187,6 @@ definitions:
         description: 响应消息
         type: string
     type: object
-  handler.Response-handler_PageResult-model_FriendLink:
-    properties:
-      code:
-        description: 业务状态码
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/handler.PageResult-model_FriendLink'
-        description: 响应数据
-      message:
-        description: 响应消息
-        type: string
-    type: object
   handler.Response-handler_PageResult-model_Message:
     properties:
       code:
@@ -330,19 +284,6 @@ definitions:
       data:
         allOf:
         - $ref: '#/definitions/model.CommentVO'
-        description: 响应数据
-      message:
-        description: 响应消息
-        type: string
-    type: object
-  handler.Response-model_FriendLink:
-    properties:
-      code:
-        description: 业务状态码
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/model.FriendLink'
         description: 响应数据
       message:
         description: 响应消息
@@ -521,23 +462,6 @@ definitions:
         type: string
       type:
         type: integer
-    type: object
-  model.FriendLink:
-    properties:
-      address:
-        type: string
-      avatar:
-        type: string
-      created_at:
-        type: string
-      id:
-        type: integer
-      intro:
-        type: string
-      name:
-        type: string
-      updated_at:
-        type: string
     type: object
   model.LoginVO:
     properties:
@@ -958,85 +882,6 @@ paths:
       summary: 获取博客首页信息
       tags:
       - blog_info
-  /link:
-    delete:
-      consumes:
-      - application/json
-      description: 根据 ID 数组删除友链
-      parameters:
-      - description: 友链ID数组
-        in: body
-        name: ids
-        required: true
-        schema:
-          items:
-            type: integer
-          type: array
-      produces:
-      - application/json
-      responses:
-        "0":
-          description: ""
-          schema:
-            $ref: '#/definitions/handler.Response-int64'
-      security:
-      - ApiKeyAuth: []
-      summary: 删除友链（批量）
-      tags:
-      - Link
-    post:
-      consumes:
-      - application/json
-      description: 添加或修改友链
-      parameters:
-      - description: 添加或修改友链
-        in: body
-        name: form
-        required: true
-        schema:
-          $ref: '#/definitions/handler.AddOrEditLinkReq'
-      produces:
-      - application/json
-      responses:
-        "0":
-          description: ""
-          schema:
-            $ref: '#/definitions/handler.Response-model_FriendLink'
-      security:
-      - ApiKeyAuth: []
-      summary: 添加或修改友链
-      tags:
-      - Link
-  /link/list:
-    get:
-      consumes:
-      - application/json
-      description: 根据条件查询获取友链列表
-      parameters:
-      - description: 当前页数
-        in: query
-        name: page_size
-        type: integer
-      - description: 每页条数
-        in: query
-        name: page_num
-        type: integer
-      - description: 搜索关键字
-        in: query
-        name: keyword
-        type: string
-      produces:
-      - application/json
-      responses:
-        "0":
-          description: ""
-          schema:
-            $ref: '#/definitions/handler.Response-handler_PageResult-model_FriendLink'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取友链列表
-      tags:
-      - Link
   /login:
     post:
       consumes:

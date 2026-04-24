@@ -102,7 +102,7 @@ CREATE TABLE `comment`  (
   `topic_id` bigint NULL DEFAULT NULL,
   `parent_id` bigint NULL DEFAULT NULL,
   `content` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `type` tinyint(1) NOT NULL COMMENT '评论类型(1.文章 2.友链 3.说说)',
+  `type` tinyint(1) NOT NULL COMMENT '评论类型(1.文章 2.说说)',
   `is_review` tinyint(1) NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
@@ -148,25 +148,6 @@ INSERT INTO `config` VALUES (15, '2023-12-27 22:40:22.813', '2023-12-27 23:01:35
 INSERT INTO `config` VALUES (16, '2023-12-27 22:59:20.110', '2023-12-27 23:01:35.035', '', 'about', '```javascript\nconsole.log(\"Hello World\")\n```\n\n我就是我，不一样的烟火！', '');
 
 -- ----------------------------
--- Table structure for friend_link
--- ----------------------------
-DROP TABLE IF EXISTS `friend_link`;
-CREATE TABLE `friend_link`  (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `created_at` datetime(3) NULL DEFAULT NULL,
-  `updated_at` datetime(3) NULL DEFAULT NULL,
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `intro` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of friend_link
--- ----------------------------
-
--- ----------------------------
 -- Table structure for menu
 -- ----------------------------
 DROP TABLE IF EXISTS `menu`;
@@ -210,7 +191,6 @@ INSERT INTO `menu` VALUES (27, '2022-10-31 10:54:03.201', '2022-11-01 01:30:06.9
 INSERT INTO `menu` VALUES (28, '2022-10-31 10:54:34.167', '2022-11-01 01:30:13.400', 4, '在线用户', 'online', '/user/online', 'ic:outline-online-prediction', 2, '', 0, 0, 1, 0, NULL);
 INSERT INTO `menu` VALUES (29, '2022-10-31 10:59:33.255', '2022-11-01 01:30:20.688', 5, '网站管理', 'website', '/setting/website', 'el:website', 1, '', 0, 0, 1, 0, NULL);
 INSERT INTO `menu` VALUES (30, '2022-10-31 11:00:09.997', '2022-11-01 01:30:24.097', 5, '页面管理', 'page', '/setting/page', 'iconoir:journal-page', 2, '', 0, 0, 1, 0, NULL);
-INSERT INTO `menu` VALUES (31, '2022-10-31 11:00:33.543', '2022-11-01 01:30:28.497', 5, '友链管理', 'link', '/setting/link', 'mdi:telegram', 3, '', 0, 0, 1, 0, NULL);
 INSERT INTO `menu` VALUES (32, '2022-10-31 11:01:00.444', '2022-11-01 01:30:33.186', 5, '关于我', 'about', '/setting/about', 'cib:about-me', 4, '', 0, 0, 1, 0, NULL);
 INSERT INTO `menu` VALUES (33, '2022-11-01 01:43:10.142', '2023-12-27 23:26:41.553', 0, '首页', '/home', '/home', 'ic:sharp-home', 0, '', 1, 0, 1, 0, NULL);
 INSERT INTO `menu` VALUES (34, '2022-11-01 09:54:36.252', '2022-11-01 10:07:00.254', 2, '修改文章', 'write/:id', '/article/write', 'icon-park-outline:write', 1, '', 0, 0, 1, 0, NULL);
@@ -293,11 +273,9 @@ INSERT INTO `page` VALUES (1, '2022-12-08 13:09:58.500', '2023-12-28 16:31:43.68
 INSERT INTO `page` VALUES (2, '2022-12-08 13:51:49.474', '2023-12-28 14:55:58.704', '归档', 'archive', 'https://cdn.hahacode.cn/page/tag.png');
 INSERT INTO `page` VALUES (3, '2022-12-08 13:52:18.084', '2023-12-28 16:31:30.137', '分类', 'category', 'https://cdn.hahacode.cn/page/category.png');
 INSERT INTO `page` VALUES (4, '2022-12-08 13:52:31.364', '2023-12-28 14:55:45.058', '标签', 'tag', 'https://cdn.hahacode.cn/page/tag.png');
-INSERT INTO `page` VALUES (5, '2022-12-08 13:52:52.389', '2023-12-28 15:02:21.859', '友链', 'link', 'https://cdn.hahacode.cn/page/link.jpg');
 INSERT INTO `page` VALUES (6, '2022-12-08 13:53:04.159', '2023-12-28 16:30:03.928', '关于', 'about', 'https://cdn.hahacode.cn/page/about.jpg');
 INSERT INTO `page` VALUES (7, '2022-12-08 13:53:17.707', '2023-12-28 16:27:13.418', '留言', 'message', 'https://cdn.hahacode.cn/page/message.jpeg');
 INSERT INTO `page` VALUES (8, '2022-12-08 13:53:30.187', '2023-12-28 14:55:25.724', '个人中心', 'user', 'https://cdn.hahacode.cn/page/user.jpg');
-INSERT INTO `page` VALUES (9, '2022-12-16 23:54:52.650', '2023-12-28 14:54:42.341', '相册', 'album', 'https://cdn.hahacode.cn/page/album.png');
 INSERT INTO `page` VALUES (10, '2022-12-16 23:55:36.059', '2023-12-28 14:55:09.345', '错误页面', '404', 'https://cdn.hahacode.cn/page/404.jpg');
 INSERT INTO `page` VALUES (11, '2022-12-16 23:56:17.917', '2023-12-28 16:33:16.644', '文章列表', 'article_list', 'https://cdn.hahacode.cn/page/article_list.jpg');
 
@@ -363,10 +341,6 @@ INSERT INTO `resource` VALUES (65, '2022-10-31 20:38:30.506', '2022-10-31 20:38:
 INSERT INTO `resource` VALUES (66, '2022-10-31 20:38:50.606', '2022-10-31 20:38:50.606', 8, '/role', 'POST', '新增/编辑角色', 0);
 INSERT INTO `resource` VALUES (67, '2022-10-31 20:39:03.752', '2022-10-31 20:39:03.752', 8, '/role', 'DELETE', '删除角色', 0);
 INSERT INTO `resource` VALUES (68, '2022-10-31 20:39:28.232', '2022-10-31 20:39:28.232', 8, '/role/option', 'GET', '角色选项', 0);
-INSERT INTO `resource` VALUES (69, '2022-10-31 20:44:22.622', '2022-10-31 20:44:22.622', 0, '', '', '友链模块', 0);
-INSERT INTO `resource` VALUES (70, '2022-10-31 20:44:41.334', '2022-10-31 20:44:41.334', 69, '/link/list', 'GET', '友链列表', 0);
-INSERT INTO `resource` VALUES (71, '2022-10-31 20:45:01.150', '2022-10-31 20:45:01.150', 69, '/link', 'POST', '新增/编辑友链', 0);
-INSERT INTO `resource` VALUES (72, '2022-10-31 20:45:12.406', '2022-10-31 20:45:12.406', 69, '/link', 'DELETE', '删除友链', 0);
 INSERT INTO `resource` VALUES (74, '2022-10-31 20:46:48.330', '2022-10-31 20:47:01.505', 0, '', '', '用户信息模块', 0);
 INSERT INTO `resource` VALUES (78, '2022-10-31 20:51:15.607', '2022-10-31 20:51:15.607', 74, '/user/list', 'GET', '用户列表', 0);
 INSERT INTO `resource` VALUES (79, '2022-10-31 20:55:15.496', '2022-10-31 20:55:15.496', 11, '/setting/blog-config', 'GET', '获取博客设置', 0);

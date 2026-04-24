@@ -18,8 +18,6 @@ const menuOptions = [
   { text: '归档', icon: 'mdi:archive', path: '/archives' },
   { text: '分类', icon: 'mdi:menu', path: '/categories' },
   { text: '标签', icon: 'mdi:tag', path: '/tags' },
-  { text: '相册', icon: 'mdi:view-gallery', path: '/albums' },
-  { text: '友链', icon: 'mdi:vector-link', path: '/links' },
   { text: '关于', icon: 'mdi:information-outline', path: '/about' },
   { text: '留言', icon: 'mdi:forum', path: '/message' },
 ]

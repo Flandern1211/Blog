@@ -17,7 +17,7 @@ import { useAppStore, useUserStore } from '@/store'
 import api from '@/api'
 
 const { type } = defineProps({
-  // 评论类型: 1-文章, 2-友链, 3-说说
+  // 评论类型: 1-文章, 2-说说
   type: Number,
 })
 

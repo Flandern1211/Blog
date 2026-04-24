@@ -71,9 +71,6 @@ const columns = [
           h(NTag, { type: 'info' }, { default: () => '文章' }),
         ]
       }
-      if (row.type === 2) { // 友链
-        return h(NTag, { type: 'success' }, { default: () => '友链' })
-      }
     },
   },
   {

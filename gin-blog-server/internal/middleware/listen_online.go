@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	g "gin-blog/internal/global"
-	"gin-blog/internal/handle"
 	"strconv"
 	"time"
 
@@ -20,9 +19,9 @@ func ListenOnline() gin.HandlerFunc {
 		ctx := context.Background()
 		rdb := c.MustGet(g.CTX_RDB).(*redis.Client)
 
-		auth, err := handle.CurrentUserAuth(c)
+		auth, err := CurrentUserAuth(c)
 		if err != nil {
-			handle.ReturnError(c, g.ErrUserAuth, err)
+			g.ReturnError(c, g.ErrUserAuth, err)
 			return
 		}
 
@@ -32,7 +31,7 @@ func ListenOnline() gin.HandlerFunc {
 		// 判断当前用户是否被强制下线
 		if rdb.Exists(ctx, offlineKey).Val() == 1 {
 			fmt.Println("用户被强制下线")
-			handle.ReturnError(c, g.ErrForceOffline, nil)
+			g.ReturnError(c, g.ErrForceOffline, nil)
 			c.Abort()
 			return
 		}

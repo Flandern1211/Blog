@@ -90,7 +90,7 @@ func (*ipUtil) GetIpSource(ipAddress string) string {
 	searcher, err := xdb.NewWithVectorIndex(dbPath, vIndex)
 
 	if err != nil {
-		slog.Error("failed to create searcher with vector index: ", err)
+		slog.Error("failed to create-api searcher with vector index: ", err)
 		return ""
 	}
 	defer searcher.Close()

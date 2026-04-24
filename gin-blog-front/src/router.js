@@ -55,22 +55,6 @@ const basicRoutes = [
     },
   },
   {
-    name: 'Album',
-    path: '/albums',
-    component: () => import('@/views/entertainment/album/index.vue'),
-    meta: {
-      title: '相册',
-    },
-  },
-  {
-    name: 'Link',
-    path: '/links',
-    component: () => import('@/views/link/index.vue'),
-    meta: {
-      title: '友情链接',
-    },
-  },
-  {
     name: 'About',
     path: '/about',
     component: () => import('@/views/about/index.vue'),

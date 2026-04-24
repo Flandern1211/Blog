@@ -4,8 +4,8 @@ export default {
   login: (data = {}) => baseRequest.post('/login', data),
   register: (data = {}) => baseRequest.post('/register', data),
   logout: () => baseRequest.get('/logout'),
-  /** 发送验证码 */
-  sendCode: params => baseRequest.get('/code', { params }),
+  /** 发送邮箱验证码 */
+  sendCode: (data = {}) => baseRequest.post('/code', data),
 
   /** 关于我 */
   about: () => request.get('/about'),
@@ -28,8 +28,6 @@ export default {
   getTags: () => request.get('/tag/list'),
   /** 留言列表 */
   getMessages: () => request.get('/message/list'),
-  /** 友链列表 */
-  getLinks: () => request.get('/link/list'),
   /** 评论列表 */
   getComments: (params = {}) => request.get('/comment/list', { params }),
   /** 评论回复列表 */

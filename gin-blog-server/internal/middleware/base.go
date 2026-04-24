@@ -3,7 +3,6 @@ package middleware
 import (
 	"errors"
 	g "gin-blog/internal/global"
-	"gin-blog/internal/handle"
 	"log/slog"
 	"net"
 	"net/http"
@@ -111,7 +110,7 @@ func Recovery(stack bool) gin.HandlerFunc {
 				}
 
 				// 发生 panic, 返回错误信息
-				handle.ReturnHttpResponse(c, http.StatusInternalServerError, g.FAIL, g.GetMsg(g.FAIL), err)
+				g.ReturnHttpResponse(c, http.StatusInternalServerError, g.FAIL, g.GetMsg(g.FAIL), err)
 
 				// 处理 panic(xxx) 的操作
 				// if code, ok := err.(int); ok { // panic(code) 根据错误码获取 msg

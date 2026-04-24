@@ -2,7 +2,9 @@ package utils
 
 import (
 	"crypto/md5"
+	"crypto/rand"
 	"encoding/hex"
+	"math/big"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -23,4 +25,15 @@ func MD5(str string, b ...byte) string {
 	h := md5.New()
 	h.Write([]byte(str))
 	return hex.EncodeToString(h.Sum(b))
+}
+
+// RandomCode 生成指定长度的随机数字验证码
+func RandomCode(length int) string {
+	const digits = "0123456789"
+	result := make([]byte, length)
+	for i := 0; i < length; i++ {
+		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(digits))))
+		result[i] = digits[num.Int64()]
+	}
+	return string(result)
 }

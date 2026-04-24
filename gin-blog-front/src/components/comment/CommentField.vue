@@ -6,7 +6,7 @@ import { useAppStore, useUserStore } from '@/store'
 import api from '@/api'
 
 const props = defineProps({
-  // 评论类型 1-文章 2-友链
+  // 评论类型 1-文章 2-说说
   type: Number,
   // 默认是否显示
   show: Boolean,

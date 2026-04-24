@@ -413,133 +413,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/link": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "添加或修改友链",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Link"
-                ],
-                "summary": "添加或修改友链",
-                "parameters": [
-                    {
-                        "description": "添加或修改友链",
-                        "name": "form",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.AddOrEditLinkReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "0": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/handler.Response-model_FriendLink"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "根据 ID 数组删除友链",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Link"
-                ],
-                "summary": "删除友链（批量）",
-                "parameters": [
-                    {
-                        "description": "友链ID数组",
-                        "name": "ids",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "integer"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "0": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/handler.Response-int64"
-                        }
-                    }
-                }
-            }
-        },
-        "/link/list": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "根据条件查询获取友链列表",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Link"
-                ],
-                "summary": "获取友链列表",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "当前页数",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页条数",
-                        "name": "page_num",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "搜索关键字",
-                        "name": "keyword",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "0": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/handler.Response-handler_PageResult-model_FriendLink"
-                        }
-                    }
-                }
-            }
-        },
         "/login": {
             "post": {
                 "description": "登录",
@@ -1218,30 +1091,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.AddOrEditLinkReq": {
-            "type": "object",
-            "required": [
-                "address",
-                "name"
-            ],
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "avatar": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "intro": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "handler.AddOrEditPageReq": {
             "type": "object",
             "properties": {
@@ -1296,30 +1145,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/model.CategoryVO"
-                    }
-                },
-                "page_num": {
-                    "description": "每页条数",
-                    "type": "integer"
-                },
-                "page_size": {
-                    "description": "上次页数",
-                    "type": "integer"
-                },
-                "total": {
-                    "description": "总条数",
-                    "type": "integer"
-                }
-            }
-        },
-        "handler.PageResult-model_FriendLink": {
-            "type": "object",
-            "properties": {
-                "page_data": {
-                    "description": "分页数据",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.FriendLink"
                     }
                 },
                 "page_num": {
@@ -1526,27 +1351,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.Response-handler_PageResult-model_FriendLink": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "业务状态码",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "响应数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/handler.PageResult-model_FriendLink"
-                        }
-                    ]
-                },
-                "message": {
-                    "description": "响应消息",
-                    "type": "string"
-                }
-            }
-        },
         "handler.Response-handler_PageResult-model_Message": {
             "type": "object",
             "properties": {
@@ -1698,27 +1502,6 @@ const docTemplate = `{
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.CommentVO"
-                        }
-                    ]
-                },
-                "message": {
-                    "description": "响应消息",
-                    "type": "string"
-                }
-            }
-        },
-        "handler.Response-model_FriendLink": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "业务状态码",
-                    "type": "integer"
-                },
-                "data": {
-                    "description": "响应数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.FriendLink"
                         }
                     ]
                 },
@@ -1990,32 +1773,6 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "integer"
-                }
-            }
-        },
-        "model.FriendLink": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "avatar": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "intro": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
                 }
             }
         },

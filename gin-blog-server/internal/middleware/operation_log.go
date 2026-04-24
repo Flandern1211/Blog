@@ -3,7 +3,6 @@ package middleware
 import (
 	"bytes"
 	g "gin-blog/internal/global"
-	"gin-blog/internal/handle"
 	"gin-blog/internal/model"
 	"gin-blog/internal/utils"
 	"io"
@@ -20,7 +19,6 @@ var optMap = map[string]string{
 	"BlogInfo":     "博客信息",
 	"Category":     "分类",
 	"Comment":      "评论",
-	"FriendLink":   "友链",
 	"Menu":         "菜单",
 	"Message":      "留言",
 	"OperationLog": "操作日志",
@@ -68,7 +66,7 @@ func OperationLog() gin.HandlerFunc {
 			}
 			c.Writer = blw
 
-			auth, _ := handle.CurrentUserAuth(c)
+			auth, _ := CurrentUserAuth(c)
 
 			body, _ := io.ReadAll(c.Request.Body)
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
@@ -96,7 +94,7 @@ func OperationLog() gin.HandlerFunc {
 			db := c.MustGet(g.CTX_DB).(*gorm.DB)
 			if err := db.Create(&operationLog).Error; err != nil {
 				slog.Error("操作日志记录失败: ", err)
-				handle.ReturnError(c, g.ErrDbOp, err)
+				g.ReturnError(c, g.ErrDbOp, err)
 				return
 			}
 		} else {

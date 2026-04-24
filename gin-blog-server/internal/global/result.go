@@ -2,7 +2,26 @@ package g
 
 import (
 	"fmt"
+	"log/slog"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
+
+// 响应结构体
+type Response[T any] struct {
+	Code    int    `json:"code"`    // 业务状态码
+	Message string `json:"message"` // 响应消息
+	Data    T      `json:"data"`    // 响应数据
+}
+
+// 分页响应数据
+type PageResult[T any] struct {
+	Page  int   `json:"page_num"`  // 每页条数
+	Size  int   `json:"page_size"` // 上次页数
+	Total int64 `json:"total"`     // 总条数
+	List  []T   `json:"page_data"` // 分页数据
+}
 
 const (
 	SUCCESS = 0   // 成功业务码
@@ -20,6 +39,10 @@ func (e Result) Code() int {
 }
 
 func (e Result) Msg() string {
+	return e.msg
+}
+
+func (e Result) Error() string {
 	return e.msg
 }
 
@@ -49,6 +72,49 @@ func RegisterResult(code int, msg string) Result {
 // 根据响应码获取响应信息
 func GetMsg(code int) string {
 	return _messages[code]
+}
+
+// HTTP 码 + 业务码 + 消息 + 数据
+func ReturnHttpResponse(c *gin.Context, httpCode, code int, msg string, data any) {
+	c.JSON(httpCode, Response[any]{
+		Code:    code,
+		Message: msg,
+		Data:    data,
+	})
+}
+
+// 业务码 + 数据
+func ReturnResponse(c *gin.Context, r Result, data any) {
+	ReturnHttpResponse(c, http.StatusOK, r.Code(), r.Msg(), data)
+}
+
+// 成功业务码 + 数据
+func ReturnSuccess(c *gin.Context, data any) {
+	ReturnResponse(c, OkResult, data)
+}
+
+// 分页成功业务码 + 数据
+func ReturnPageSuccess[T any](c *gin.Context, list []T, total int64, page, size int) {
+	ReturnSuccess(c, PageResult[T]{
+		Page:  page,
+		Size:  size,
+		Total: total,
+		List:  list,
+	})
+}
+
+// 错误业务码 + 数据
+func ReturnError(c *gin.Context, r any, data any) {
+	if res, ok := r.(Result); ok {
+		ReturnResponse(c, res, data)
+		return
+	}
+	if err, ok := r.(error); ok {
+		slog.Error(err.Error())
+		ReturnResponse(c, ErrDbOp, err.Error())
+		return
+	}
+	ReturnResponse(c, ErrDbOp, data)
 }
 
 var (
@@ -88,8 +154,9 @@ var (
 	ErrMenuUsedByRole      = RegisterResult(6007, "该菜单正在被角色使用，无法删除")
 	ErrMenuHasChildren     = RegisterResult(6008, "该菜单下存在子菜单，无法删除")
 
-	ErrSendEmail = RegisterResult(6101, "发送邮件失败")
-	ErrCodeNoexit = RegisterResult(6102, "Code不存在 请重新注册")
-	ErrParseEmailCode = RegisterResult(6103, "解析邮件Code失败 请重试")
-	ErrUserExist = RegisterResult(6104, "该邮箱已经注册 请重新注册")
+	ErrSendEmail  = RegisterResult(6101, "发送邮件失败")
+	ErrCodeWrong  = RegisterResult(6102, "验证码错误或已过期")
+	ErrUserExist  = RegisterResult(6103, "该用户名已存在")
+	ErrEmailExist = RegisterResult(6104, "该邮箱已经注册")
+	ErrNoLogin    = RegisterResult(6105, "用户未登录")
 )

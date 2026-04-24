@@ -9,7 +9,7 @@ networks:
 
 services:
   gvb-redis:
-    image: redis:7.0-alpine
+    image: redis:7.0
     container_name: gvb-redis
     restart: always
     volumes:

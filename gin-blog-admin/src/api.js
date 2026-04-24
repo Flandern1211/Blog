@@ -39,10 +39,6 @@ export default {
   deleteComments: (data = []) => request.delete('/comment', { data }),
   updateCommentReview: (ids, is_review) => request.put('/comment/review', { ids, is_review }),
 
-  // 友链相关接口
-  getLinks: (params = {}) => request.get('/link/list', { params }),
-  deleteLinks: (data = []) => request.delete('/link', { data }),
-  saveOrUpdateLink: data => request.post('/link', data),
   // 日志相关接口
   getOperationLogs: (params = {}) => request.get('/operation/log/list', { params }),
   deleteOperationLogs: (data = []) => request.delete('/operation/log', { data }),

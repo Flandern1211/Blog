@@ -36,17 +36,6 @@ export default {
       },
     },
     {
-      name: 'FriendLink',
-      path: 'link',
-      component: () => import('./link/index.vue'),
-      meta: {
-        title: '友链管理',
-        icon: 'mdi:telegram',
-        order: 3,
-        keepAlive: true,
-      },
-    },
-    {
       name: 'About',
       path: 'about',
       component: () => import('./about/index.vue'),

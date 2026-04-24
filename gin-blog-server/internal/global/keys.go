@@ -3,8 +3,7 @@ package g
 // Redis Key
 
 const (
-	// MAIL_CODE = "mail_code:" // 验证码
-	// DELETE       = "delete:"      //? 记录强制下线用户?
+	EMAIL_CODE   = "email_code:"   // 邮箱验证码
 	ONLINE_USER  = "online_user:"  // 在线用户
 	OFFLINE_USER = "offline_user:" // 强制下线用户
 	VISITOR_AREA = "visitor_area"  // 地域统计

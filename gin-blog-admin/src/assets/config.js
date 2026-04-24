@@ -35,12 +35,10 @@ export const articleTypeMap = {
 // 评论类型选项
 export const commentTypeOptions = [
   { label: '文章', value: 1 },
-  { label: '友链', value: 2 },
   { label: '说说', value: 3 },
 ]
 
 export const commentTypeMap = {
   1: { name: '文章', tag: 'info' },
-  2: { name: '友链', tag: 'warning' },
   3: { name: '说说', tag: 'error' },
 }
