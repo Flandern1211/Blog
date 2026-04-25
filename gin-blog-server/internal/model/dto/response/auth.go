@@ -8,4 +8,5 @@ type LoginVO struct {
 	ArticleLikeSet []string `json:"article_like_set"`
 	CommentLikeSet []string `json:"comment_like_set"`
 	Token          string   `json:"token"`
+	IsSuper        bool     `json:"is_super"`
 }

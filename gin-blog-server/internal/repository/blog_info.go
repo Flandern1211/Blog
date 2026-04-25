@@ -2,6 +2,8 @@ package repository
 
 import (
 	"gin-blog/internal/model/entity"
+	"strconv"
+
 	"gorm.io/gorm"
 )
 
@@ -10,6 +12,8 @@ type BlogInfoRepository interface {
 	GetConfigMap(db *gorm.DB) (map[string]string, error)
 	UpdateConfigMap(db *gorm.DB, m map[string]string) error
 	GetConfig(db *gorm.DB, key string) (string, error)
+	GetConfigBool(db *gorm.DB, key string) bool
+	GetConfigInt(db *gorm.DB, key string) int
 	UpdateConfig(db *gorm.DB, key, value string) error
 
 	// Page
@@ -40,7 +44,7 @@ func (r *blogInfoRepository) GetConfigMap(db *gorm.DB) (map[string]string, error
 func (r *blogInfoRepository) UpdateConfigMap(db *gorm.DB, m map[string]string) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		for k, v := range m {
-			if err := tx.Model(&entity.Config{}).Where("key", k).Update("value", v).Error; err != nil {
+			if err := tx.Model(&entity.Config{}).Where("`key` = ?", k).Update("value", v).Error; err != nil {
 				return err
 			}
 		}
@@ -50,19 +54,34 @@ func (r *blogInfoRepository) UpdateConfigMap(db *gorm.DB, m map[string]string) e
 
 func (r *blogInfoRepository) GetConfig(db *gorm.DB, key string) (string, error) {
 	var config entity.Config
-	if err := db.Where("key = ?", key).First(&config).Error; err != nil {
+	if err := db.Where("`key` = ?", key).First(&config).Error; err != nil {
 		return "", err
 	}
 	return config.Value, nil
 }
 
-func (r *blogInfoRepository) UpdateConfig(db *gorm.DB, key, value string) error {
-	var config entity.Config
-	if err := db.Where("key = ?", key).FirstOrCreate(&config).Error; err != nil {
-		return err
+func (r *blogInfoRepository) GetConfigBool(db *gorm.DB, key string) bool {
+	val, err := r.GetConfig(db, key)
+	if err != nil {
+		return false
 	}
-	config.Value = value
-	return db.Save(&config).Error
+	return val == "true"
+}
+
+func (r *blogInfoRepository) GetConfigInt(db *gorm.DB, key string) int {
+	val, err := r.GetConfig(db, key)
+	if err != nil {
+		return 0
+	}
+	result, err := strconv.Atoi(val)
+	if err != nil {
+		return 0
+	}
+	return result
+}
+
+func (r *blogInfoRepository) UpdateConfig(db *gorm.DB, key, value string) error {
+	return db.Where(&entity.Config{Key: key}).Assign(&entity.Config{Value: value}).FirstOrCreate(&entity.Config{}).Error
 }
 
 // Page implementations

@@ -6,6 +6,7 @@ import (
 	"gin-blog/internal/model/dto/response"
 	"gin-blog/internal/model/entity"
 	"gin-blog/internal/repository"
+	g2 "gin-blog/pkg/errors"
 	"sort"
 
 	"github.com/gin-gonic/gin"
@@ -180,11 +181,11 @@ func (s *permissionService) DeleteMenu(c *gin.Context, id int) error {
 	db := c.MustGet(g.CTX_DB).(*gorm.DB)
 	inUse, _ := s.repo.CheckMenuInUse(db, id)
 	if inUse {
-		return g.ErrMenuUsedByRole
+		return g2.NewDefault(g2.CodeMenuUsedByRole)
 	}
 	hasChild, _ := s.repo.CheckMenuHasChild(db, id)
 	if hasChild {
-		return g.ErrMenuHasChildren
+		return g2.NewDefault(g2.CodeMenuHasChildren)
 	}
 	return s.repo.DeleteMenu(db, id)
 }

@@ -7,7 +7,7 @@ import (
 )
 
 type ArticleRepository interface {
-	// Article
+	// 后台
 	GetList(db *gorm.DB, page, size int, title string, categoryId, tagId, artType, status int, isDelete *bool) ([]entity.Article, int64, error)
 	GetById(db *gorm.DB, id int) (*entity.Article, error)
 	SaveOrUpdate(db *gorm.DB, article *entity.Article, categoryName string, tagNames []string) error
@@ -15,22 +15,23 @@ type ArticleRepository interface {
 	SoftDelete(db *gorm.DB, ids []int, isDelete bool) error
 	Delete(db *gorm.DB, ids []int) error
 
-	// Front-end specific Article methods
+	// 前台
 	GetBlogArticle(db *gorm.DB, id int) (*entity.Article, error)
 	GetBlogArticleList(db *gorm.DB, page, size, categoryId, tagId int) ([]entity.Article, int64, error)
 	GetRecommendList(db *gorm.DB, id, n int) ([]entity.RecommendArticleVO, error)
 	GetLastArticle(db *gorm.DB, id int) (entity.ArticlePaginationVO, error)
 	GetNextArticle(db *gorm.DB, id int) (entity.ArticlePaginationVO, error)
 	GetNewestList(db *gorm.DB, n int) ([]entity.RecommendArticleVO, error)
+	ImportArticle(db *gorm.DB, userAuthId int, title, content, img, categoryName, tagName string) error
 
-	// Category
-	GetCategoryList(db *gorm.DB, page, size int, keyword string) ([]entity.Category, int64, error)
+	// Category 后台
+	GetCategoryList(db *gorm.DB, page, size int, keyword string) ([]entity.CategoryVO, int64, error)
 	SaveOrUpdateCategory(db *gorm.DB, id int, name string) error
 	DeleteCategories(db *gorm.DB, ids []int) error
 	GetCategoryOption(db *gorm.DB) ([]entity.Category, error)
 
-	// Tag
-	GetTagList(db *gorm.DB, page, size int, keyword string) ([]entity.Tag, int64, error)
+	// Tag 后台
+	GetTagList(db *gorm.DB, page, size int, keyword string) ([]entity.TagVO, int64, error)
 	SaveOrUpdateTag(db *gorm.DB, id int, name string) error
 	DeleteTags(db *gorm.DB, ids []int) error
 	GetTagOption(db *gorm.DB) ([]entity.Tag, error)
@@ -67,10 +68,11 @@ func (r *articleRepository) GetList(db *gorm.DB, page, size int, title string, c
 		query = query.Where("is_delete = ?", *isDelete)
 	}
 
-	err := query.Count(&total).Offset((page - 1) * size).Limit(size).Order("is_top DESC, id DESC").Find(&list).Error
+	err := query.Count(&total).Scopes(Paginate(page, size)).Order("is_top DESC, id DESC").Find(&list).Error
 	return list, total, err
 }
 
+// 根据id查找指定数据
 func (r *articleRepository) GetById(db *gorm.DB, id int) (*entity.Article, error) {
 	var article entity.Article
 	err := db.Preload("Category").Preload("Tags").First(&article, id).Error
@@ -104,7 +106,7 @@ func (r *articleRepository) SaveOrUpdate(db *gorm.DB, article *entity.Article, c
 			if err := tx.Model(article).Updates(article).Error; err != nil {
 				return err
 			}
-			// Clear tags for update
+			//
 			if err := tx.Delete(&entity.ArticleTag{}, "article_id = ?", article.ID).Error; err != nil {
 				return err
 			}
@@ -148,12 +150,20 @@ func (r *articleRepository) SoftDelete(db *gorm.DB, ids []int, isDelete bool) er
 }
 
 func (r *articleRepository) Delete(db *gorm.DB, ids []int) error {
-	return db.Delete(&entity.Article{}, ids).Error
+	return db.Transaction(func(tx *gorm.DB) error {
+		// 删除 [文章-标签] 关联
+		if err := tx.Where("article_id IN ?", ids).Delete(&entity.ArticleTag{}).Error; err != nil {
+			return err
+		}
+		// 删除 [文章]
+		return tx.Delete(&entity.Article{}, ids).Error
+	})
 }
 
 // Front-end implementations
 func (r *articleRepository) GetBlogArticle(db *gorm.DB, id int) (*entity.Article, error) {
 	var data entity.Article
+	//预加载
 	result := db.Preload("Category").Preload("Tags").
 		Where(entity.Article{Model: entity.Model{ID: id}}).
 		Where("is_delete = 0 AND status = 1").
@@ -231,15 +241,58 @@ func (r *articleRepository) GetNewestList(db *gorm.DB, n int) ([]entity.Recommen
 	return data, result.Error
 }
 
+func (r *articleRepository) ImportArticle(db *gorm.DB, userAuthId int, title, content, img, categoryName, tagName string) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		article := entity.Article{
+			Title:   title,
+			Content: content,
+			Img:     img,
+			Status:  entity.ARTICLE_STATUS_DRAFT,
+			Type:    entity.ARTICLE_TYPE_ORIGINAL,
+			UserId:  userAuthId,
+		}
+
+		var category entity.Category
+		if err := tx.Where("name = ?", categoryName).FirstOrCreate(&category, entity.Category{Name: categoryName}).Error; err != nil {
+			return err
+		}
+		article.CategoryId = category.ID
+
+		if err := tx.Create(&article).Error; err != nil {
+			return err
+		}
+
+		var tag entity.Tag
+		if err := tx.Where("name = ?", tagName).FirstOrCreate(&tag, entity.Tag{Name: tagName}).Error; err != nil {
+			return err
+		}
+
+		return tx.Create(&entity.ArticleTag{
+			ArticleId: article.ID,
+			TagId:     tag.ID,
+		}).Error
+	})
+}
+
 // Category implementations
-func (r *articleRepository) GetCategoryList(db *gorm.DB, page, size int, keyword string) ([]entity.Category, int64, error) {
-	var list []entity.Category
+func (r *articleRepository) GetCategoryList(db *gorm.DB, page, size int, keyword string) ([]entity.CategoryVO, int64, error) {
+	var list []entity.CategoryVO
 	var total int64
-	db = db.Model(&entity.Category{})
+
+	query := db.Table("category c").
+		Select("c.id", "c.name", "COUNT(a.id) AS article_count", "c.created_at", "c.updated_at").
+		Joins("LEFT JOIN article a ON c.id = a.category_id AND a.is_delete = 0 AND a.status = 1")
+
 	if keyword != "" {
-		db = db.Where("name LIKE ?", "%"+keyword+"%")
+		query = query.Where("c.name LIKE ?", "%"+keyword+"%")
 	}
-	err := db.Count(&total).Offset((page - 1) * size).Limit(size).Find(&list).Error
+
+	err := query.Group("c.id").
+		Order("c.updated_at DESC").
+		Count(&total).
+		Offset((page - 1) * size).Limit(size).
+		Find(&list).Error
+
 	return list, total, err
 }
 
@@ -261,14 +314,24 @@ func (r *articleRepository) GetCategoryOption(db *gorm.DB) ([]entity.Category, e
 }
 
 // Tag implementations
-func (r *articleRepository) GetTagList(db *gorm.DB, page, size int, keyword string) ([]entity.Tag, int64, error) {
-	var list []entity.Tag
+func (r *articleRepository) GetTagList(db *gorm.DB, page, size int, keyword string) ([]entity.TagVO, int64, error) {
+	var list []entity.TagVO
 	var total int64
-	db = db.Model(&entity.Tag{})
+
+	query := db.Table("tag t").
+		Joins("LEFT JOIN article_tag at ON t.id = at.tag_id").
+		Select("t.id", "t.name", "COUNT(at.article_id) AS article_count", "t.created_at", "t.updated_at")
+
 	if keyword != "" {
-		db = db.Where("name LIKE ?", "%"+keyword+"%")
+		query = query.Where("t.name LIKE ?", "%"+keyword+"%")
 	}
-	err := db.Count(&total).Offset((page - 1) * size).Limit(size).Find(&list).Error
+
+	err := query.Group("t.id").
+		Order("t.updated_at DESC").
+		Count(&total).
+		Offset((page - 1) * size).Limit(size).
+		Find(&list).Error
+
 	return list, total, err
 }
 

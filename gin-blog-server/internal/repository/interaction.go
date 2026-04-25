@@ -21,6 +21,7 @@ type InteractionRepository interface {
 	GetCommentReplyList(db *gorm.DB, id, page, size int) ([]entity.Comment, error)
 	AddComment(db *gorm.DB, comment *entity.Comment) error
 	GetCommentById(db *gorm.DB, id int) (*entity.Comment, error)
+	GetArticleCommentCount(db *gorm.DB, articleId int) (int64, error)
 }
 
 type interactionRepository struct{}
@@ -42,7 +43,7 @@ func (r *interactionRepository) GetMessageList(db *gorm.DB, page, size int, nick
 		query = query.Where("is_review = ?", *isReview)
 	}
 
-	err := query.Count(&total).Order("created_at DESC").Offset((page - 1) * size).Limit(size).Find(&list).Error
+	err := query.Count(&total).Order("created_at DESC").Scopes(Paginate(page, size)).Find(&list).Error
 	return list, total, err
 }
 
@@ -86,7 +87,7 @@ func (r *interactionRepository) GetCommentList(db *gorm.DB, page, size, typ int,
 		Preload("ReplyUser").Preload("ReplyUser.UserInfo").
 		Preload("Article").
 		Order("id DESC").
-		Offset((page - 1) * size).Limit(size).
+		Scopes(Paginate(page, size)).
 		Find(&list).Error
 	return list, total, err
 }
@@ -115,7 +116,7 @@ func (r *interactionRepository) GetFrontCommentList(db *gorm.DB, page, size, top
 		Count(&total).
 		Preload("User").Preload("User.UserInfo").
 		Order("id DESC").
-		Offset((page - 1) * size).Limit(size).
+		Scopes(Paginate(page, size)).
 		Find(&list).Error
 
 	if err != nil {
@@ -144,7 +145,7 @@ func (r *interactionRepository) GetCommentReplyList(db *gorm.DB, id, page, size 
 		Preload("User").Preload("User.UserInfo").
 		Preload("ReplyUser").Preload("ReplyUser.UserInfo").
 		Order("id DESC").
-		Offset((page - 1) * size).Limit(size).
+		Scopes(Paginate(page, size)).
 		Find(&data).Error
 	return data, err
 }
@@ -160,4 +161,12 @@ func (r *interactionRepository) GetCommentById(db *gorm.DB, id int) (*entity.Com
 		Preload("Article").
 		First(&comment, id).Error
 	return &comment, err
+}
+
+func (r *interactionRepository) GetArticleCommentCount(db *gorm.DB, articleId int) (int64, error) {
+	var count int64
+	err := db.Model(&entity.Comment{}).
+		Where("topic_id = ? AND type = 1 AND is_review = 1", articleId).
+		Count(&count).Error
+	return count, err
 }

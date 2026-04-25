@@ -82,10 +82,3 @@ type RoleMenu struct {
 	RoleId int `json:"-" gorm:"primaryKey;uniqueIndex:idx_role_menu"`
 	MenuId int `json:"-" gorm:"primaryKey;uniqueIndex:idx_role_menu"`
 }
-
-type Model struct {
-	ID        int        `gorm:"primaryKey;autoIncrement" json:"id"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	DeletedAt *time.Time `gorm:"index" json:"-"`
-}

@@ -46,7 +46,7 @@ func (r *permissionRepository) GetRoleList(db *gorm.DB, page, size int, keyword 
 	if keyword != "" {
 		db = db.Where("name LIKE ? OR label LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
 	}
-	err := db.Count(&total).Offset((page - 1) * size).Limit(size).Find(&list).Error
+	err := db.Count(&total).Scopes(Paginate(page, size)).Find(&list).Error
 	return list, total, err
 }
 

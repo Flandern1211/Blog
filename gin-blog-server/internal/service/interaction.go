@@ -2,7 +2,6 @@ package service
 
 import (
 	global "gin-blog/internal/global"
-	"gin-blog/internal/model"
 	"gin-blog/internal/model/dto/request"
 	"gin-blog/internal/model/dto/response"
 	"gin-blog/internal/model/entity"
@@ -34,11 +33,15 @@ type InteractionService interface {
 }
 
 type interactionService struct {
-	repo repository.InteractionRepository
+	repo         repository.InteractionRepository
+	blogInfoRepo repository.BlogInfoRepository
 }
 
-func NewInteractionService(repo repository.InteractionRepository) InteractionService {
-	return &interactionService{repo: repo}
+func NewInteractionService(repo repository.InteractionRepository, blogInfoRepo repository.BlogInfoRepository) InteractionService {
+	return &interactionService{
+		repo:         repo,
+		blogInfoRepo: blogInfoRepo,
+	}
 }
 
 // Message implementations
@@ -80,11 +83,12 @@ func (s *interactionService) AddMessage(c *gin.Context, authId int, req request.
 
 	ipAddress := utils.IP.GetIpAddress(c)
 	ipSource := utils.IP.GetIpSource(ipAddress)
-	isReview := model.GetConfigBool(db, global.CONFIG_IS_COMMENT_REVIEW)
+	isReview := s.blogInfoRepo.GetConfigBool(db, global.CONFIG_IS_COMMENT_REVIEW)
 
 	// 获取用户信息
-	var user entity.UserAuth
-	if err := db.Preload("UserInfo").First(&user, authId).Error; err != nil {
+	authRepo := repository.NewAuthRepository()
+	user, err := authRepo.GetUserAuthInfoById(db, authId)
+	if err != nil {
 		return err
 	}
 
@@ -173,7 +177,7 @@ func (s *interactionService) GetCommentReplyList(c *gin.Context, id int, page, s
 
 func (s *interactionService) AddComment(c *gin.Context, authId int, req request.FAddCommentReq) error {
 	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	isReview := model.GetConfigBool(db, global.CONFIG_IS_COMMENT_REVIEW)
+	isReview := s.blogInfoRepo.GetConfigBool(db, global.CONFIG_IS_COMMENT_REVIEW)
 
 	comment := &entity.Comment{
 		UserId:      authId,

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	ginblog "gin-blog/internal"
 	g "gin-blog/internal/global"
-	"gin-blog/internal/model"
+	"gin-blog/internal/model/entity"
 	"gin-blog/internal/utils"
 	"log"
 	"log/slog"
@@ -40,7 +40,7 @@ func main() {
 // 创建超级管理员
 func createSuperAdmin(db *gorm.DB, username, password string) {
 	err := db.Transaction(func(tx *gorm.DB) error {
-		var userAuth model.UserAuth
+		var userAuth entity.UserAuth
 		err := db.Where("username = ?", username).First(&userAuth).Error
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
@@ -58,11 +58,11 @@ func createSuperAdmin(db *gorm.DB, username, password string) {
 			return errors.New("密码生成失败: " + err.Error())
 		}
 
-		userAuth = model.UserAuth{
+		userAuth = entity.UserAuth{
 			Username: username,
 			Password: hashPassword,
 			IsSuper:  true,
-			UserInfo: &model.UserInfo{
+			UserInfo: &entity.UserInfo{
 				Nickname: username,
 				Avatar:   "https://cdn.hahacode.cn/config/superadmin_avatar.jpg",
 				Intro:    "这个人很懒，什么都没有留下",

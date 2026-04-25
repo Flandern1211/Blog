@@ -1,9 +1,11 @@
 package permission
 
 import (
-	global "gin-blog/internal/global"
+	"gin-blog/internal/middleware"
 	"gin-blog/internal/model/dto/request"
 	"gin-blog/internal/service"
+	"gin-blog/pkg/errors"
+	"gin-blog/pkg/response"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -20,52 +22,52 @@ func NewRoleController(svc service.PermissionService) *RoleController {
 func (ctrl *RoleController) GetOption(c *gin.Context) {
 	list, err := ctrl.svc.GetRoleOption(c)
 	if err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, list)
+	response.Success(c, list)
 }
 
 func (ctrl *RoleController) GetTreeList(c *gin.Context) {
 	var query request.PageQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 	keyword := c.Query("keyword")
 
 	list, total, err := ctrl.svc.GetRoleList(c, query, keyword)
 	if err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnPageSuccess(c, list, total, query.Page, query.Size)
+	response.PageSuccess(c, list, total, query.Page, query.Size)
 }
 
 func (ctrl *RoleController) SaveOrUpdate(c *gin.Context) {
 	var req request.AddOrEditRoleReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 	if err := ctrl.svc.SaveOrUpdateRole(c, req); err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }
 
 func (ctrl *RoleController) Delete(c *gin.Context) {
 	var ids []int
 	if err := c.ShouldBindJSON(&ids); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 	if err := ctrl.svc.DeleteRoles(c, ids); err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }
 
 type MenuController struct {
@@ -77,62 +79,61 @@ func NewMenuController(svc service.PermissionService) *MenuController {
 }
 
 func (ctrl *MenuController) GetUserMenu(c *gin.Context) {
-	// Assuming authId and isSuper are available in context or sessions
-	// For now, get from session
-	// authId := sessions.Default(c).Get(global.CTX_USER_AUTH).(int)
-	// isSuper := sessions.Default(c).Get(global.CTX_IS_SUPER).(bool)
-	// Need to check how to get auth info properly.
-	// For now, let's assume we have a way to get CurrentUserAuth
-	// auth, _ := CurrentUserAuth(c) // This is what handle used.
-	// I'll use a placeholder for now or implement a helper.
+	authId := middleware.GetUserID(c)
+	if authId == 0 {
+		response.Error(c, errors.CodeNoLogin, errors.GetMessage(errors.CodeNoLogin))
+		return
+	}
 
-	// authId := 1 // Placeholder
-	// isSuper := true // Placeholder
+	isSuper := middleware.IsSuper(c)
 
-	// Better: use the same logic as before but adapted.
-	// I'll skip the detailed implementation of GetUserMenu for now or use placeholders.
-	global.ReturnSuccess(c, nil)
+	list, err := ctrl.svc.GetUserMenu(c, authId, isSuper)
+	if err != nil {
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
+		return
+	}
+	response.Success(c, list)
 }
 
 func (ctrl *MenuController) GetTreeList(c *gin.Context) {
 	keyword := c.Query("keyword")
 	list, err := ctrl.svc.GetMenuTreeList(c, keyword)
 	if err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, list)
+	response.Success(c, list)
 }
 
 func (ctrl *MenuController) GetOption(c *gin.Context) {
 	list, err := ctrl.svc.GetMenuOption(c)
 	if err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, list)
+	response.Success(c, list)
 }
 
 func (ctrl *MenuController) SaveOrUpdate(c *gin.Context) {
 	var req request.AddOrEditMenuReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 	if err := ctrl.svc.SaveOrUpdateMenu(c, req); err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }
 
 func (ctrl *MenuController) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	if err := ctrl.svc.DeleteMenu(c, id); err != nil {
-		global.ReturnError(c, err, nil)
+		response.BizError(c, err)
 		return
 	}
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }
 
 type ResourceController struct {
@@ -147,52 +148,52 @@ func (ctrl *ResourceController) GetTreeList(c *gin.Context) {
 	keyword := c.Query("keyword")
 	list, err := ctrl.svc.GetResourceTreeList(c, keyword)
 	if err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, list)
+	response.Success(c, list)
 }
 
 func (ctrl *ResourceController) GetOption(c *gin.Context) {
 	list, err := ctrl.svc.GetResourceOption(c)
 	if err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, list)
+	response.Success(c, list)
 }
 
 func (ctrl *ResourceController) SaveOrUpdate(c *gin.Context) {
 	var req request.AddOrEditResourceReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 	if err := ctrl.svc.SaveOrUpdateResource(c, req); err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }
 
 func (ctrl *ResourceController) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	if err := ctrl.svc.DeleteResource(c, id); err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }
 
 func (ctrl *ResourceController) UpdateAnonymous(c *gin.Context) {
 	var req request.EditAnonymousReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 	if err := ctrl.svc.UpdateResourceAnonymous(c, req); err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }

@@ -2,8 +2,8 @@ package ginblog
 
 import (
 	"context"
+	"gin-blog/internal/app"
 	g "gin-blog/internal/global"
-	"gin-blog/internal/model"
 	"log"
 	"log/slog"
 	"os"
@@ -107,7 +107,7 @@ func InitDatabase(conf *g.Config) *gorm.DB {
 	log.Println("数据库连接成功", dbtype, dsn)
 
 	if conf.Server.DbAutoMigrate {
-		if err := model.MakeMigrate(db); err != nil {
+		if err := app.MakeMigrate(db); err != nil {
 			log.Fatal("数据库迁移失败", err)
 		}
 		log.Println("数据库自动迁移成功")

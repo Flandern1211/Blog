@@ -2,6 +2,7 @@ package repository
 
 import (
 	"gin-blog/internal/model/entity"
+
 	"gorm.io/gorm"
 )
 
@@ -14,6 +15,7 @@ type SystemRepository interface {
 	// OperationLog
 	GetOperationLogList(db *gorm.DB, page, size int, keyword string) ([]entity.OperationLog, int64, error)
 	DeleteOperationLogs(db *gorm.DB, ids []int) error
+	CreateOperationLog(db *gorm.DB, log *entity.OperationLog) error
 }
 
 type systemRepository struct{}
@@ -34,7 +36,7 @@ func (r *systemRepository) GetLinkList(db *gorm.DB, page, size int, keyword stri
 			Or("intro LIKE ?", "%"+keyword+"%")
 	}
 
-	err := query.Count(&total).Order("created_at DESC").Offset((page - 1) * size).Limit(size).Find(&list).Error
+	err := query.Count(&total).Order("created_at DESC").Scopes(Paginate(page, size)).Find(&list).Error
 	return list, total, err
 }
 
@@ -60,10 +62,14 @@ func (r *systemRepository) GetOperationLogList(db *gorm.DB, page, size int, keyw
 			Or("opt_desc LIKE ?", "%"+keyword+"%")
 	}
 
-	err := query.Count(&total).Order("created_at DESC").Offset((page - 1) * size).Limit(size).Find(&list).Error
+	err := query.Count(&total).Order("created_at DESC").Scopes(Paginate(page, size)).Find(&list).Error
 	return list, total, err
 }
 
 func (r *systemRepository) DeleteOperationLogs(db *gorm.DB, ids []int) error {
 	return db.Where("id IN ?", ids).Delete(&entity.OperationLog{}).Error
+}
+
+func (r *systemRepository) CreateOperationLog(db *gorm.DB, log *entity.OperationLog) error {
+	return db.Create(log).Error
 }

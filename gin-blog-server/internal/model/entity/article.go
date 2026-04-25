@@ -53,6 +53,16 @@ type Tag struct {
 	Articles []Article `gorm:"many2many:article_tag" json:"articles"`
 }
 
+type CategoryVO struct {
+	Category
+	ArticleCount int `json:"article_count"`
+}
+
+type TagVO struct {
+	Tag
+	ArticleCount int `json:"article_count"`
+}
+
 type ArticlePaginationVO struct {
 	ID    int    `json:"id"`
 	Img   string `json:"img"`

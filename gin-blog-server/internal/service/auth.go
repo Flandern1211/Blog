@@ -2,12 +2,13 @@ package service
 
 import (
 	"errors"
-	global "gin-blog/internal/global"
+	g "gin-blog/internal/global"
 	"gin-blog/internal/model/dto/request"
 	"gin-blog/internal/model/dto/response"
 	"gin-blog/internal/repository"
 	"gin-blog/internal/utils"
-	"gin-blog/internal/utils/jwt"
+	pkgErrors "gin-blog/pkg/errors"
+	"gin-blog/pkg/jwt"
 	"strconv"
 	"time"
 
@@ -32,19 +33,19 @@ func NewAuthService(repo repository.AuthRepository) AuthService {
 }
 
 func (s *authService) Login(c *gin.Context, req request.LoginReq) (*response.LoginVO, error) {
-	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	rdb := c.MustGet(global.CTX_RDB).(*global.RedisClient)
+	db := c.MustGet(g.CTX_DB).(*gorm.DB)
+	rdb := c.MustGet(g.CTX_RDB).(*g.RedisClient)
 
 	userAuth, err := s.repo.GetUserAuthInfoByName(db, req.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, global.ErrUserNotExist
+			return nil, pkgErrors.NewDefault(pkgErrors.CodeUserNotFound)
 		}
-		return nil, global.ErrDbOp
+		return nil, pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
 	}
 
 	if !utils.BcryptCheck(req.Password, userAuth.Password) {
-		return nil, global.ErrPassword
+		return nil, pkgErrors.NewDefault(pkgErrors.CodeInvalidCredentials)
 	}
 
 	ipAddress := utils.IP.GetIpAddress(c)
@@ -53,38 +54,38 @@ func (s *authService) Login(c *gin.Context, req request.LoginReq) (*response.Log
 	userInfo, err := s.repo.GetUserInfoById(db, userAuth.UserInfoId)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, global.ErrUserNotExist
+			return nil, pkgErrors.NewDefault(pkgErrors.CodeUserNotFound)
 		}
-		return nil, global.ErrDbOp
+		return nil, pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
 	}
 
 	roleIds, err := s.repo.GetRoleIdsByUserId(db, userAuth.ID)
 	if err != nil {
-		return nil, global.ErrDbOp
+		return nil, pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
 	}
 
 	rctx := c.Request.Context()
-	articleLikeSet, err := rdb.SMembers(rctx, global.ARTICLE_USER_LIKE_SET+strconv.Itoa(userAuth.ID)).Result()
+	articleLikeSet, err := rdb.SMembers(rctx, g.ARTICLE_USER_LIKE_SET+strconv.Itoa(userAuth.ID)).Result()
 	if err != nil {
-		return nil, global.ErrRedisOp
+		return nil, pkgErrors.NewDefault(pkgErrors.CodeRedisOpError)
 	}
-	commentLikeSet, err := rdb.SMembers(rctx, global.COMMENT_USER_LIKE_SET+strconv.Itoa(userAuth.ID)).Result()
+	commentLikeSet, err := rdb.SMembers(rctx, g.COMMENT_USER_LIKE_SET+strconv.Itoa(userAuth.ID)).Result()
 	if err != nil {
-		return nil, global.ErrRedisOp
+		return nil, pkgErrors.NewDefault(pkgErrors.CodeRedisOpError)
 	}
 
-	conf := global.Conf.JWT
-	token, err := jwt.GenToken(conf.Secret, conf.Issuer, int(conf.Expire), userAuth.ID, roleIds)
+	conf := g.Conf.JWT
+	token, err := jwt.GenerateToken(conf.Secret, conf.Issuer, int(conf.Expire), userAuth.ID, roleIds)
 	if err != nil {
-		return nil, global.ErrTokenCreate
+		return nil, pkgErrors.NewDefault(pkgErrors.CodeTokenCreateErr)
 	}
 
 	err = s.repo.UpdateUserLoginInfo(db, userAuth.ID, ipAddress, ipSource)
 	if err != nil {
-		return nil, global.ErrDbOp
+		return nil, pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
 	}
 
-	offlineKey := global.OFFLINE_USER + strconv.Itoa(userAuth.ID)
+	offlineKey := g.OFFLINE_USER + strconv.Itoa(userAuth.ID)
 	rdb.Del(rctx, offlineKey).Result()
 
 	return &response.LoginVO{
@@ -92,26 +93,27 @@ func (s *authService) Login(c *gin.Context, req request.LoginReq) (*response.Log
 		ArticleLikeSet: articleLikeSet,
 		CommentLikeSet: commentLikeSet,
 		Token:          token,
+		IsSuper:        userAuth.IsSuper,
 	}, nil
 }
 
 func (s *authService) Logout(c *gin.Context, authId int) error {
-	rdb := c.MustGet(global.CTX_RDB).(*global.RedisClient)
+	rdb := c.MustGet(g.CTX_RDB).(*g.RedisClient)
 	rctx := c.Request.Context()
-	onlineKey := global.ONLINE_USER + strconv.Itoa(authId)
+	onlineKey := g.ONLINE_USER + strconv.Itoa(authId)
 	rdb.Del(rctx, onlineKey)
 	return nil
 }
 
 func (s *authService) SendCode(c *gin.Context, email string) error {
-	rdb := c.MustGet(global.CTX_RDB).(*global.RedisClient)
+	rdb := c.MustGet(g.CTX_RDB).(*g.RedisClient)
 	rctx := c.Request.Context()
 
 	code := utils.RandomCode(6)
 	// 存入 redis，有效期 15 分钟
-	err := rdb.Set(rctx, global.EMAIL_CODE+email, code, 15*time.Minute).Err()
+	err := rdb.Set(rctx, g.EMAIL_CODE+email, code, 15*time.Minute).Err()
 	if err != nil {
-		return global.ErrRedisOp
+		return pkgErrors.NewDefault(pkgErrors.CodeRedisOpError)
 	}
 
 	// 发送邮件
@@ -121,62 +123,56 @@ func (s *authService) SendCode(c *gin.Context, email string) error {
 		Code:     code,
 	})
 	if err != nil {
-		return global.ErrSendEmail
+		return pkgErrors.NewDefault(pkgErrors.CodeSendEmailErr)
 	}
 
 	return nil
 }
 
 func (s *authService) Register(c *gin.Context, req request.RegisterReq) error {
-	req.Username = utils.Format(req.Username)
-	db := c.MustGet(global.CTX_DB).(*gorm.DB)
+	req.Email = utils.Format(req.Email)
+	db := c.MustGet(g.CTX_DB).(*gorm.DB)
 
-	auth, err := s.repo.GetUserAuthInfoByName(db, req.Username)
+	auth, err := s.repo.GetUserAuthInfoByName(db, req.Email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return global.ErrDbOp
+		return pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
 	}
 	if auth != nil {
-		return global.ErrUserExist
+		return pkgErrors.NewDefault(pkgErrors.CodeEmailExist)
 	}
 
-	info := utils.GenEmailVerificationInfo(req.Username, req.Password)
-	// Wait, original code uses SetMailInfo, we need to adapt that, maybe via rdb directly?
-	// For simplicity, assuming SetMailInfo is available in utils or we rewrite it here:
-	// utils.SetMailInfo(rdb, info, 15*time.Minute)
-	// But let's check utils to see if it's there. The original code uses `SetMailInfo(GetRDB(c), info, 15*time.Minute)`.
-	// For now, I'll use the original `SetMailInfo` if it's in `handle` package, I need to copy it or adapt.
-	// Let's implement it here.
-	rdb := c.MustGet(global.CTX_RDB).(*global.RedisClient)
+	info := utils.GenEmailVerificationInfo(req.Email, req.Password)
+	rdb := c.MustGet(g.CTX_RDB).(*g.RedisClient)
 	rctx := c.Request.Context()
 	rdb.Set(rctx, info, info, 15*time.Minute)
 
-	EmailData := utils.GetEmailData(req.Username, info)
-	err = utils.SendEmail(req.Username, EmailData)
+	EmailData := utils.GetEmailData(req.Email, info)
+	err = utils.SendEmail(req.Email, EmailData)
 	if err != nil {
-		return global.ErrSendEmail
+		return pkgErrors.NewDefault(pkgErrors.CodeSendEmailErr)
 	}
 	return nil
 }
 
 func (s *authService) VerifyCode(c *gin.Context, code string) error {
-	rdb := c.MustGet(global.CTX_RDB).(*global.RedisClient)
+	rdb := c.MustGet(g.CTX_RDB).(*g.RedisClient)
 	rctx := c.Request.Context()
 
 	val, err := rdb.Get(rctx, code).Result()
 	if err != nil || val == "" {
-		return errors.New("code not exist")
+		return pkgErrors.NewDefault(pkgErrors.CodeCodeWrong)
 	}
 	rdb.Del(rctx, code)
 
 	username, password, err := utils.ParseEmailVerificationInfo(code)
 	if err != nil {
-		return err
+		return pkgErrors.NewDefault(pkgErrors.CodeCodeWrong)
 	}
 
-	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	_, _, _, err = s.repo.CreateNewUser(db, username, password)
+	db := c.MustGet(g.CTX_DB).(*gorm.DB)
+	_, _, _, err = s.repo.CreateNewUser(db, username, username, password)
 	if err != nil {
-		return err
+		return pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
 	}
 
 	return nil

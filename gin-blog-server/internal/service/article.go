@@ -39,11 +39,15 @@ type ArticleService interface {
 }
 
 type articleService struct {
-	repo repository.ArticleRepository
+	repo         repository.ArticleRepository
+	interactRepo repository.InteractionRepository
 }
 
-func NewArticleService(repo repository.ArticleRepository) ArticleService {
-	return &articleService{repo: repo}
+func NewArticleService(repo repository.ArticleRepository, interactRepo repository.InteractionRepository) ArticleService {
+	return &articleService{
+		repo:         repo,
+		interactRepo: interactRepo,
+	}
 }
 
 // Article implementations
@@ -190,13 +194,7 @@ func (s *articleService) GetBlogArticle(c *gin.Context, id int) (*response.BlogA
 	vo.ViewCount = int64(rdb.ZScore(rctx, global.ARTICLE_VIEW_COUNT, strconv.Itoa(id)).Val())
 	likeCount, _ := strconv.Atoi(rdb.HGet(rctx, global.ARTICLE_LIKE_COUNT, strconv.Itoa(id)).Val())
 	vo.LikeCount = int64(likeCount)
-
-	// We need CommentCount here, but wait, CommentCount was from model.GetArticleCommentCount(db, id)
-	// I'll leave it as 0 or implement it. Let's do a subquery or inject interaction repo.
-	// For now, let's use db.Table("comment").Where("topic_id = ? AND type = ?", id, 1).Count(&vo.CommentCount)
-	var commentCount int64
-	db.Table("comment").Where("topic_id = ? AND type = ?", id, 1).Count(&commentCount)
-	vo.CommentCount = commentCount
+	vo.CommentCount, _ = s.interactRepo.GetArticleCommentCount(db, id)
 
 	return vo, nil
 }
@@ -210,9 +208,10 @@ func (s *articleService) GetCategoryList(c *gin.Context, query request.CategoryQ
 	}
 	var res []response.CategoryVO
 	for _, cat := range list {
-		var count int64
-		db.Model(&entity.Article{}).Where("category_id = ?", cat.ID).Count(&count)
-		res = append(res, response.CategoryVO{Category: cat, ArticleCount: int(count)})
+		res = append(res, response.CategoryVO{
+			Category:     cat.Category,
+			ArticleCount: cat.ArticleCount,
+		})
 	}
 	return res, total, nil
 }
@@ -249,9 +248,10 @@ func (s *articleService) GetTagList(c *gin.Context, query request.TagQuery) ([]r
 	}
 	var res []response.TagVO
 	for _, tag := range list {
-		var count int64
-		db.Table("article_tag").Where("tag_id = ?", tag.ID).Count(&count)
-		res = append(res, response.TagVO{Tag: tag, ArticleCount: int(count)})
+		res = append(res, response.TagVO{
+			Tag:          tag.Tag,
+			ArticleCount: tag.ArticleCount,
+		})
 	}
 	return res, total, nil
 }

@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	g "gin-blog/internal/global"
-	"gin-blog/internal/model"
-	"gin-blog/internal/utils/jwt"
+	"gin-blog/internal/repository"
+	pkgErrors "gin-blog/pkg/errors"
+	"gin-blog/pkg/jwt"
+	"gin-blog/pkg/response"
 	"log/slog"
 	"strings"
 	"time"
@@ -20,81 +22,120 @@ import (
 // 如果不存在 session, 则从 Authorization 中获取 token, 并解析 token 获取用户信息, 并设置到 session 中
 func JWTAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// FIXME: 前后台 session 混乱, 暂时无法将用户信息挂载在 gin context 缓存
-		// auth, _ := handle.CurrentUserAuth(c)
-		// if auth != nil {
-		// 	slog.Debug("[middleware-JWTAuth] user auth exist, skip jwt auth")
-		// 	c.Next()
-		// 	return
-		// }
-
-		slog.Debug("[middleware-JWTAuth] user auth not exist, do jwt auth")
-
 		db := c.MustGet(g.CTX_DB).(*gorm.DB)
+		authRepo := repository.NewAuthRepository()
 
-		// 系统管理的资源需要做验证, 没有加进来的不需要
-		url, method := c.FullPath()[4:], c.Request.Method
-		resource, err := model.GetResource(db, url, method)
+		// 修正 URL 提取逻辑 (Issue #4)
+		fullPath := c.FullPath()
+		url := fullPath
+		if strings.HasPrefix(fullPath, "/api/front") {
+			url = fullPath[10:]
+		} else if strings.HasPrefix(fullPath, "/api") {
+			url = fullPath[4:]
+		}
+		method := c.Request.Method
+
+		slog.Info(fmt.Sprintf("[middleware-JWTAuth] checking: %s %s (raw: %s)", method, url, fullPath))
+		resource, err := authRepo.GetResource(db, url, method)
+
+		authRequired := true
 		if err != nil {
-			// 没有找到的资源, 直接跳过后续验证
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				slog.Debug("[middleware-JWTAuth] resource not exist, skip jwt auth")
-				c.Set("skip_check", true)
-				c.Next()
-				c.Set("skip_check", false)
+				slog.Info("[middleware-JWTAuth] resource not exist, skip mandatory auth")
+				authRequired = false
+			} else {
+				response.Error(c, pkgErrors.CodeDbOpError, pkgErrors.GetMessage(pkgErrors.CodeDbOpError))
+				c.Abort()
 				return
 			}
-			g.ReturnError(c, g.ErrDbOp, err)
-			return
+		} else if resource.Anonymous {
+			slog.Debug(fmt.Sprintf("[middleware-JWTAuth] resource: %s %s is anonymous, skip mandatory auth!", url, method))
+			authRequired = false
 		}
 
-		// 匿名资源, 直接跳过后续验证
-		if resource.Anonymous {
-			slog.Debug(fmt.Sprintf("[middleware-JWTAuth] resource: %s %s is anonymous, skip jwt auth!", url, method))
+		authorization := c.Request.Header.Get("Authorization")
+		if authorization == "" {
+			if authRequired {
+				response.Error(c, pkgErrors.CodeTokenNotExist, pkgErrors.GetMessage(pkgErrors.CodeTokenNotExist))
+				c.Abort()
+				return
+			}
 			c.Set("skip_check", true)
 			c.Next()
 			c.Set("skip_check", false)
 			return
 		}
 
-		authorization := c.Request.Header.Get("Authorization")
-		if authorization == "" {
-			g.ReturnError(c, g.ErrTokenNotExist, nil)
-			return
-		}
-
 		// token 的正确格式: `Bearer [tokenString]`
 		parts := strings.Split(authorization, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			g.ReturnError(c, g.ErrTokenType, nil)
+			if authRequired {
+				response.Error(c, pkgErrors.CodeTokenTypeErr, pkgErrors.GetMessage(pkgErrors.CodeTokenTypeErr))
+				c.Abort()
+				return
+			}
+			c.Set("skip_check", true)
+			c.Next()
+			c.Set("skip_check", false)
 			return
 		}
 
 		claims, err := jwt.ParseToken(g.Conf.JWT.Secret, parts[1])
 		if err != nil {
-			g.ReturnError(c, g.ErrTokenWrong, err)
+			if authRequired {
+				response.Error(c, pkgErrors.CodeInvalidToken, pkgErrors.GetMessage(pkgErrors.CodeInvalidToken))
+				c.Abort()
+				return
+			}
+			c.Set("skip_check", true)
+			c.Next()
+			c.Set("skip_check", false)
 			return
 		}
 
 		// 判断 token 已过期
 		if time.Now().Unix() > claims.ExpiresAt.Unix() {
-			g.ReturnError(c, g.ErrTokenRuntime, nil)
+			if authRequired {
+				response.Error(c, pkgErrors.CodeTokenExpired, pkgErrors.GetMessage(pkgErrors.CodeTokenExpired))
+				c.Abort()
+				return
+			}
+			c.Set("skip_check", true)
+			c.Next()
+			c.Set("skip_check", false)
 			return
 		}
 
-		user, err := model.GetUserAuthInfoById(db, claims.UserId)
+		user, err := authRepo.GetUserAuthInfoById(db, claims.UserID)
 		if err != nil {
-			g.ReturnError(c, g.ErrUserNotExist, err)
+			if authRequired {
+				response.Error(c, pkgErrors.CodeUserNotFound, pkgErrors.GetMessage(pkgErrors.CodeUserNotFound))
+				c.Abort()
+				return
+			}
+			c.Set("skip_check", true)
+			c.Next()
+			c.Set("skip_check", false)
 			return
 		}
 
 		// session
 		session := sessions.Default(c)
-		session.Set(g.CTX_USER_AUTH, claims.UserId)
+		session.Set(g.CTX_USER_AUTH, claims.UserID)
+		session.Set(g.CTX_IS_SUPER, user.IsSuper)
 		session.Save()
 
 		// gin context
 		c.Set(g.CTX_USER_AUTH, user)
+		c.Set(g.CTX_IS_SUPER, user.IsSuper)
+
+		if !authRequired {
+			c.Set("skip_check", true)
+		}
+		c.Next()
+		if !authRequired {
+			c.Set("skip_check", false)
+		}
 	}
 }
 
@@ -109,7 +150,8 @@ func PermissionCheck() gin.HandlerFunc {
 		db := c.MustGet(g.CTX_DB).(*gorm.DB)
 		auth, err := CurrentUserAuth(c)
 		if err != nil {
-			g.ReturnError(c, g.ErrUserNotExist, err)
+			response.Error(c, pkgErrors.CodeUserNotFound, pkgErrors.GetMessage(pkgErrors.CodeUserNotFound))
+			c.Abort()
 			return
 		}
 
@@ -119,21 +161,37 @@ func PermissionCheck() gin.HandlerFunc {
 			return
 		}
 
-		url := c.FullPath()[4:]
+		// 修正 URL 提取逻辑 (Issue #4, #12)
+		fullPath := c.FullPath()
+		url := fullPath
+		if strings.HasPrefix(fullPath, "/api/front") {
+			url = fullPath[10:]
+		} else if strings.HasPrefix(fullPath, "/api") {
+			url = fullPath[4:]
+		}
 		method := c.Request.Method
+		authRepo := repository.NewAuthRepository()
 
 		slog.Debug(fmt.Sprintf("[middleware-PermissionCheck] %v, %v, %v\n", auth.Username, url, method))
+		pass := false
 		for _, role := range auth.Roles {
-			slog.Debug(fmt.Sprintf("[middleware-PermissionCheck] %v\n", role.Name))
-			pass, err := model.CheckRoleAuth(db, role.ID, url, method)
+			slog.Debug(fmt.Sprintf("[middleware-PermissionCheck] check role: %v\n", role.Name))
+			p, err := authRepo.CheckRoleAuth(db, role.ID, url, method)
 			if err != nil {
-				g.ReturnError(c, g.ErrDbOp, err)
+				response.Error(c, pkgErrors.CodeDbOpError, pkgErrors.GetMessage(pkgErrors.CodeDbOpError))
+				c.Abort()
 				return
 			}
-			if !pass {
-				g.ReturnError(c, g.ErrPermission, nil)
-				return
+			if p {
+				pass = true
+				break
 			}
+		}
+
+		if !pass {
+			response.Error(c, pkgErrors.CodePermissionErr, pkgErrors.GetMessage(pkgErrors.CodePermissionErr))
+			c.Abort()
+			return
 		}
 
 		slog.Debug("[middleware-PermissionCheck]: pass")

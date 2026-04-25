@@ -1,9 +1,10 @@
 package system
 
 import (
-	global "gin-blog/internal/global"
 	"gin-blog/internal/model/dto/request"
 	"gin-blog/internal/service"
+	"gin-blog/pkg/errors"
+	"gin-blog/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,42 +20,42 @@ func NewLinkController(svc service.SystemService) *LinkController {
 func (ctrl *LinkController) GetList(c *gin.Context) {
 	var query request.FriendLinkQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 	list, total, err := ctrl.svc.GetLinkList(c, query)
 	if err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnPageSuccess(c, list, total, query.Page, query.Size)
+	response.PageSuccess(c, list, total, query.Page, query.Size)
 }
 
 func (ctrl *LinkController) SaveOrUpdate(c *gin.Context) {
 	var req request.AddOrEditLinkReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 	link, err := ctrl.svc.SaveOrUpdateLink(c, req)
 	if err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, link)
+	response.Success(c, link)
 }
 
 func (ctrl *LinkController) Delete(c *gin.Context) {
 	var ids []int
 	if err := c.ShouldBindJSON(&ids); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 	if err := ctrl.svc.DeleteLinks(c, ids); err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }
 
 type OperationLogController struct {
@@ -68,26 +69,26 @@ func NewOperationLogController(svc service.SystemService) *OperationLogControlle
 func (ctrl *OperationLogController) GetList(c *gin.Context) {
 	var query request.OperationLogQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 	list, total, err := ctrl.svc.GetOperationLogList(c, query)
 	if err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnPageSuccess(c, list, total, query.Page, query.Size)
+	response.PageSuccess(c, list, total, query.Page, query.Size)
 }
 
 func (ctrl *OperationLogController) Delete(c *gin.Context) {
 	var ids []int
 	if err := c.ShouldBindJSON(&ids); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 	if err := ctrl.svc.DeleteOperationLogs(c, ids); err != nil {
-		global.ReturnError(c, global.ErrDbOp, err)
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	g "gin-blog/internal/global"
+	pkgErrors "gin-blog/pkg/errors"
+	"gin-blog/pkg/response"
 	"strconv"
 	"time"
 
@@ -21,7 +23,7 @@ func ListenOnline() gin.HandlerFunc {
 
 		auth, err := CurrentUserAuth(c)
 		if err != nil {
-			g.ReturnError(c, g.ErrUserAuth, err)
+			response.BizError(c, pkgErrors.NewWithErr(pkgErrors.CodeUserAuthError, pkgErrors.GetMessage(pkgErrors.CodeUserAuthError), err))
 			return
 		}
 
@@ -31,7 +33,7 @@ func ListenOnline() gin.HandlerFunc {
 		// 判断当前用户是否被强制下线
 		if rdb.Exists(ctx, offlineKey).Val() == 1 {
 			fmt.Println("用户被强制下线")
-			g.ReturnError(c, g.ErrForceOffline, nil)
+			response.Error(c, pkgErrors.CodeForceOffline, pkgErrors.GetMessage(pkgErrors.CodeForceOffline))
 			c.Abort()
 			return
 		}

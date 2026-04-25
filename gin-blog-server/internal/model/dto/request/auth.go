@@ -6,7 +6,7 @@ type LoginReq struct {
 }
 
 type RegisterReq struct {
-	Username string `json:"email" binding:"required" validate:"required,email"`
+	Email    string `json:"email" binding:"required" validate:"required,email"`
 	Password string `json:"password" binding:"required,min=4,max=20" validate:"required,min=4,max=20"`
 }
 

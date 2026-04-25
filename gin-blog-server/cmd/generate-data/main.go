@@ -4,7 +4,7 @@ import (
 	"flag"
 	ginblog "gin-blog/internal"
 	g "gin-blog/internal/global"
-	"gin-blog/internal/model"
+	"gin-blog/internal/model/entity"
 	"gin-blog/internal/utils"
 	"log/slog"
 	"strings"
@@ -54,7 +54,7 @@ func generateDefaultAuths(db *gorm.DB) {
 func generateDefaultPages(db *gorm.DB) {
 	slog.Info("-----初始化博客页面 start-----")
 
-	pages := []model.Page{
+	pages := []entity.Page{
 		{Name: "首页", Label: "home", Cover: "https://cdn.hahacode.cn/page/home.jpg"},
 		{Name: "归档", Label: "archive", Cover: "https://cdn.hahacode.cn/page/archive.png"},
 		{Name: "分类", Label: "category", Cover: "https://cdn.hahacode.cn/page/category.png"},
@@ -83,7 +83,7 @@ func generateDefaultPages(db *gorm.DB) {
 func generateDefaultConfigs(db *gorm.DB) {
 	slog.Info("-----初始化博客配置 start-----")
 
-	configs := []model.Config{
+	configs := []entity.Config{
 		{Key: "website_avatar", Value: "https://foruda.gitee.com/avatar/1677041571085433939/5221991_szluyu99_1614389421.png", Desc: "网站头像"},
 		{Key: "website_name", Value: "阵雨的个人博客", Desc: "网站名称"},
 		{Key: "website_author", Value: "阵雨", Desc: "网站作者"},
@@ -118,7 +118,7 @@ func generateDefaultConfigs(db *gorm.DB) {
 func generateDefaultRolesAndUsers(db *gorm.DB) {
 	slog.Info("-----初始化默认角色用户 start-----")
 
-	roles := []model.Role{
+	roles := []entity.Role{
 		{Name: "admin", Label: "管理员"},
 		{Name: "guest", Label: "游客"},
 	}
@@ -134,11 +134,11 @@ func generateDefaultRolesAndUsers(db *gorm.DB) {
 	}
 
 	pwd, _ := utils.BcryptHash("123456")
-	auths := []model.UserAuth{
+	auths := []entity.UserAuth{
 		{
 			Username: "admin",
 			Password: pwd,
-			UserInfo: &model.UserInfo{
+			UserInfo: &entity.UserInfo{
 				Nickname: "admin",
 				Avatar:   "https://www.bing.com/rp/ar_9isCNU2Q-VG1yEDDHnx8HAFQ.png",
 			},
@@ -146,7 +146,7 @@ func generateDefaultRolesAndUsers(db *gorm.DB) {
 		{
 			Username: "guest",
 			Password: pwd,
-			UserInfo: &model.UserInfo{
+			UserInfo: &entity.UserInfo{
 				Nickname: "guest",
 				Avatar:   "https://www.bing.com/rp/ar_9isCNU2Q-VG1yEDDHnx8HAFQ.png",
 			},
@@ -162,7 +162,7 @@ func generateDefaultRolesAndUsers(db *gorm.DB) {
 			}
 		}
 		// 创建用户角色关联关系
-		db.Create(&model.UserAuthRole{UserAuthId: auths[i].ID, RoleId: roles[i].ID})
+		db.Create(&entity.UserAuthRole{UserAuthId: auths[i].ID, RoleId: roles[i].ID})
 	}
 
 	slog.Info("-----初始化默认角色用户 end-----")
@@ -172,7 +172,7 @@ func generateDefaultRolesAndUsers(db *gorm.DB) {
 func generateDefaultResources(db *gorm.DB) {
 	slog.Info("-----初始化接口资源 start-----")
 
-	parents := []model.Resource{
+	parents := []entity.Resource{
 		{Name: "文章模块"},
 		{Name: "分类模块"},
 		{Name: "标签模块"},
@@ -197,7 +197,7 @@ func generateDefaultResources(db *gorm.DB) {
 		}
 	}
 
-	resources := []model.Resource{
+	resources := []entity.Resource{
 		// 文章模块
 		{Name: "文章列表", ParentId: parents[0].ID, Url: "/article/list", Method: "GET"},
 		{Name: "文章详情", ParentId: parents[0].ID, Url: "/article/:id", Method: "GET"},
@@ -282,11 +282,11 @@ func generateDefaultResources(db *gorm.DB) {
 	db.Find(&resources)
 
 	// 给 admin 角色添加所有资源访问权限
-	var adminRole model.Role
+	var adminRole entity.Role
 	if err := db.Where("name", "admin").First(&adminRole).Error; err == nil {
 		for _, resource := range resources {
 			if resource.ID != 0 {
-				if err := db.Create(&model.RoleResource{RoleId: adminRole.ID, ResourceId: resource.ID}).Error; err != nil {
+				if err := db.Create(&entity.RoleResource{RoleId: adminRole.ID, ResourceId: resource.ID}).Error; err != nil {
 					if strings.Contains(err.Error(), "UNIQUE constraint failed") || strings.Contains(err.Error(), "Duplicate entry") {
 						slog.Info("admin 角色菜单关联关系初始化失败" + err.Error())
 					} else {
@@ -298,11 +298,11 @@ func generateDefaultResources(db *gorm.DB) {
 	}
 
 	// 给 guest 添加查询资源访问权限
-	var guestRole model.Role
+	var guestRole entity.Role
 	if err := db.Where("name", "guest").First(&guestRole).Error; err == nil {
 		for _, resource := range resources {
 			if resource.ID != 0 && resource.Method == "GET" {
-				if err := db.Create(&model.RoleResource{RoleId: guestRole.ID, ResourceId: resource.ID}).Error; err != nil {
+				if err := db.Create(&entity.RoleResource{RoleId: guestRole.ID, ResourceId: resource.ID}).Error; err != nil {
 					if strings.Contains(err.Error(), "UNIQUE constraint failed") || strings.Contains(err.Error(), "Duplicate entry") {
 						slog.Info("guest 角色菜单关联关系初始化失败" + err.Error())
 					} else {
@@ -320,7 +320,7 @@ func generateDefaultResources(db *gorm.DB) {
 func generateDefaultMenus(db *gorm.DB) {
 	slog.Info("-----初始化菜单 start-----")
 
-	parents := []model.Menu{
+	parents := []entity.Menu{
 		{Name: "首页", Path: "/home", Icon: "ic:sharp-home", OrderNum: 0, Component: "/home", Redirect: "/home", Catalogue: true}, // catalogue
 		{Name: "文章管理", Path: "/article", Icon: "ic:twotone-article", OrderNum: 1, Component: "Layout", Redirect: "/article/list"},
 		{Name: "权限管理", Path: "/auth", Icon: "cib:adguard", OrderNum: 3, Component: "Layout", Redirect: "/auth/menu"},
@@ -341,7 +341,7 @@ func generateDefaultMenus(db *gorm.DB) {
 		}
 	}
 
-	menus := []model.Menu{
+	menus := []entity.Menu{
 		// 文章管理
 		{Name: "发布文章", Path: "write", Component: "/article/write", Icon: "icon-park-outline:write", OrderNum: 1, ParentId: parents[1].ID},
 		{Name: "文章列表", Path: "list", Component: "/article/list", Icon: "material-symbols:format-list-bulleted", OrderNum: 2, ParentId: parents[1].ID},
@@ -381,11 +381,11 @@ func generateDefaultMenus(db *gorm.DB) {
 	db.Find(&menus)
 
 	// 给 admin 角色添加所有菜单访问权限
-	var adminRole model.Role
+	var adminRole entity.Role
 	if err := db.Where("name", "admin").First(&adminRole).Error; err == nil {
 		for _, menu := range menus {
 			if menu.ID != 0 {
-				if err := db.Create(&model.RoleMenu{RoleId: adminRole.ID, MenuId: menu.ID}).Error; err != nil {
+				if err := db.Create(&entity.RoleMenu{RoleId: adminRole.ID, MenuId: menu.ID}).Error; err != nil {
 					if strings.Contains(err.Error(), "UNIQUE constraint failed") || strings.Contains(err.Error(), "Duplicate entry") {
 						slog.Info("admin 角色菜单关联关系初始化失败" + err.Error())
 					} else {
@@ -397,11 +397,11 @@ func generateDefaultMenus(db *gorm.DB) {
 	}
 
 	// 给 guest 角色添加所有菜单访问权限
-	var guestRole model.Role
+	var guestRole entity.Role
 	if err := db.Where("name", "guest").First(&guestRole).Error; err == nil {
 		for _, menu := range menus {
 			if menu.ID != 0 {
-				if err := db.Create(&model.RoleMenu{RoleId: guestRole.ID, MenuId: menu.ID}).Error; err != nil {
+				if err := db.Create(&entity.RoleMenu{RoleId: guestRole.ID, MenuId: menu.ID}).Error; err != nil {
 					if strings.Contains(err.Error(), "UNIQUE constraint failed") || strings.Contains(err.Error(), "Duplicate entry") {
 						slog.Info("guest 角色菜单关联关系初始化失败" + err.Error())
 					} else {

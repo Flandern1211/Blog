@@ -4,8 +4,9 @@ import (
 	global "gin-blog/internal/global"
 	"gin-blog/internal/model/dto/request"
 	"gin-blog/internal/service"
+	"gin-blog/pkg/errors"
+	"gin-blog/pkg/response"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -22,71 +23,65 @@ func NewAuthController(svc service.AuthService) *AuthController {
 func (ctrl *AuthController) Login(c *gin.Context) {
 	var req request.LoginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 
 	vo, err := ctrl.svc.Login(c, req)
 	if err != nil {
-		global.ReturnError(c, err, nil)
+		response.BizError(c, err)
 		return
 	}
 
 	session := sessions.Default(c)
 	session.Set(global.CTX_USER_AUTH, vo.ID)
+	session.Set(global.CTX_IS_SUPER, vo.IsSuper)
 	session.Save()
 
-	global.ReturnSuccess(c, vo)
+	response.Success(c, vo)
 }
 
 func (ctrl *AuthController) Logout(c *gin.Context) {
-	c.Set(global.CTX_USER_AUTH, nil)
-
-	authIdStr := sessions.Default(c).Get(global.CTX_USER_AUTH)
-	if authIdStr == nil {
-		global.ReturnSuccess(c, nil)
-		return
+	session := sessions.Default(c)
+	val := session.Get(global.CTX_USER_AUTH)
+	if val != nil {
+		authId := val.(int)
+		session.Delete(global.CTX_USER_AUTH)
+		session.Save()
+		ctrl.svc.Logout(c, authId)
 	}
 
-	authId, _ := strconv.Atoi(authIdStr.(string)) // Or handle interface{} properly
-
-	session := sessions.Default(c)
-	session.Delete(global.CTX_USER_AUTH)
-	session.Save()
-
-	ctrl.svc.Logout(c, authId)
-
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }
 
 func (ctrl *AuthController) Register(c *gin.Context) {
 	var req request.RegisterReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 
 	if err := ctrl.svc.Register(c, req); err != nil {
-		global.ReturnError(c, err, nil)
+		response.BizError(c, err)
 		return
 	}
 
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }
 
 func (ctrl *AuthController) SendCode(c *gin.Context) {
 	var req request.SendCodeReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 
 	if err := ctrl.svc.SendCode(c, req.Email); err != nil {
-		global.ReturnError(c, err, nil)
+		response.BizError(c, err)
 		return
 	}
 
-	global.ReturnSuccess(c, nil)
+	response.Success(c, nil)
 }
 
 func (ctrl *AuthController) VerifyCode(c *gin.Context) {

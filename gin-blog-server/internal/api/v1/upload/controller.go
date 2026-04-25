@@ -1,8 +1,9 @@
 package upload
 
 import (
-	global "gin-blog/internal/global"
 	"gin-blog/internal/service"
+	"gin-blog/pkg/errors"
+	"gin-blog/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,15 +19,15 @@ func NewUploadController(svc service.UploadService) *UploadController {
 func (ctrl *UploadController) UploadFile(c *gin.Context) {
 	_, file, err := c.Request.FormFile("file")
 	if err != nil {
-		global.ReturnError(c, global.ErrRequest, err)
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
 
 	url, err := ctrl.svc.UploadFile(c, file)
 	if err != nil {
-		global.ReturnError(c, global.ErrFileUpload, err)
+		response.Error(c, errors.CodeFileUploadErr, errors.GetMessage(errors.CodeFileUploadErr))
 		return
 	}
 
-	global.ReturnSuccess(c, url)
+	response.Success(c, url)
 }

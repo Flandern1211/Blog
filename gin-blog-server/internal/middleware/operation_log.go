@@ -3,8 +3,11 @@ package middleware
 import (
 	"bytes"
 	g "gin-blog/internal/global"
-	"gin-blog/internal/model"
+	"gin-blog/internal/model/entity"
+	"gin-blog/internal/repository"
 	"gin-blog/internal/utils"
+	pkgErrors "gin-blog/pkg/errors"
+	"gin-blog/pkg/response"
 	"io"
 	"log/slog"
 	"strings"
@@ -75,7 +78,7 @@ func OperationLog() gin.HandlerFunc {
 			ipSource := utils.IP.GetIpSource(ipAddress)
 
 			moduleName := getOptResource(c.HandlerName())
-			operationLog := model.OperationLog{
+			operationLog := entity.OperationLog{
 				OptModule:     moduleName, // TODO: 优化
 				OptType:       GetOptString(c.Request.Method),
 				OptUrl:        c.Request.RequestURI,
@@ -92,9 +95,10 @@ func OperationLog() gin.HandlerFunc {
 			operationLog.ResponseData = blw.body.String() // 从缓存中获取响应体内容
 
 			db := c.MustGet(g.CTX_DB).(*gorm.DB)
-			if err := db.Create(&operationLog).Error; err != nil {
-				slog.Error("操作日志记录失败: ", err)
-				g.ReturnError(c, g.ErrDbOp, err)
+			systemRepo := repository.NewSystemRepository()
+			if err := systemRepo.CreateOperationLog(db, &operationLog); err != nil {
+				slog.Error("操作日志记录失败", "err", err)
+				response.BizError(c, pkgErrors.NewWithErr(pkgErrors.CodeDbOpError, pkgErrors.GetMessage(pkgErrors.CodeDbOpError), err))
 				return
 			}
 		} else {

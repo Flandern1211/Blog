@@ -100,7 +100,7 @@ func (r *userRepository) GetList(db *gorm.DB, page, size int, loginType int8, ni
 	err := query.Count(&total).
 		Preload("UserInfo").
 		Preload("Roles").
-		Offset((page - 1) * size).Limit(size).
+		Scopes(Paginate(page, size)).
 		Find(&list).Error
 
 	return list, total, err

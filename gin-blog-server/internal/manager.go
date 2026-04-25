@@ -56,10 +56,10 @@ func init() {
 	permissionRepo := repository.NewPermissionRepository()
 
 	// 初始化服务
-	articleSvc := service.NewArticleService(articleRepo)
+	articleSvc := service.NewArticleService(articleRepo, interactRepo)
 	authSvc := service.NewAuthService(authRepo)
 	userSvc := service.NewUserService(userRepo)
-	interactSvc := service.NewInteractionService(interactRepo)
+	interactSvc := service.NewInteractionService(interactRepo, blogInfoRepo)
 	blogInfoSvc := service.NewBlogInfoService(blogInfoRepo)
 	systemSvc := service.NewSystemService(systemRepo)
 	permissionSvc := service.NewPermissionService(permissionRepo)
@@ -103,12 +103,11 @@ func RegisterHandlers(r *gin.Engine) {
 func registerBaseHandler(r *gin.Engine) {
 	base := r.Group("/api")
 
-	base.POST("/login", authCtrl.Login)                 // 登录
-	base.POST("/register", authCtrl.Register)           // 注册
-	base.POST("/code", authCtrl.SendCode)               // 发送邮箱验证码
-	base.GET("/logout", authCtrl.Logout)                // 退出登录
-	base.GET("/config", blogInfoCtrl.GetConfigMap)      // 获取配置
-	base.PATCH("/config", blogInfoCtrl.UpdateConfigMap) // 更新配置
+	base.POST("/login", authCtrl.Login)            // 登录
+	base.POST("/register", authCtrl.Register)      // 注册
+	base.POST("/code", authCtrl.SendCode)          // 发送邮箱验证码
+	base.GET("/logout", authCtrl.Logout)           // 退出登录
+	base.GET("/config", blogInfoCtrl.GetConfigMap) // 获取配置
 }
 
 // 后台管理系统的接口: 全部需要 登录 + 鉴权
@@ -121,8 +120,9 @@ func registerAdminHandler(r *gin.Engine) {
 	auth.Use(middleware.OperationLog())
 	auth.Use(middleware.ListenOnline())
 
-	auth.GET("/home", blogInfoCtrl.GetHomeInfo) // 后台首页信息
-	auth.POST("/upload", uploadCtrl.UploadFile) // 文件上传
+	auth.GET("/home", blogInfoCtrl.GetHomeInfo)         // 后台首页信息
+	auth.POST("/upload", uploadCtrl.UploadFile)         // 文件上传
+	auth.PATCH("/config", blogInfoCtrl.UpdateConfigMap) // 更新配置 (Issue #6)
 
 	// 博客设置
 	setting := auth.Group("/setting")

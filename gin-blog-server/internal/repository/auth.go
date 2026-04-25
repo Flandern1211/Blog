@@ -12,7 +12,10 @@ type AuthRepository interface {
 	GetUserInfoById(db *gorm.DB, id int) (*entity.UserInfo, error)
 	GetRoleIdsByUserId(db *gorm.DB, userId int) ([]int, error)
 	UpdateUserLoginInfo(db *gorm.DB, userId int, ipAddress, ipSource string) error
-	CreateNewUser(db *gorm.DB, username, password string) (*entity.UserAuth, *entity.UserInfo, *entity.UserAuthRole, error)
+	CreateNewUser(db *gorm.DB, username, email, password string) (*entity.UserAuth, *entity.UserInfo, *entity.UserAuthRole, error)
+	GetUserAuthInfoById(db *gorm.DB, id int) (*entity.UserAuth, error)
+	GetResource(db *gorm.DB, url, method string) (*entity.Resource, error)
+	CheckRoleAuth(db *gorm.DB, roleId int, url, method string) (bool, error)
 }
 
 type authRepository struct{}
@@ -47,24 +50,27 @@ func (r *authRepository) UpdateUserLoginInfo(db *gorm.DB, userId int, ipAddress,
 		}).Error
 }
 
-func (r *authRepository) CreateNewUser(db *gorm.DB, username, password string) (*entity.UserAuth, *entity.UserInfo, *entity.UserAuthRole, error) {
+func (r *authRepository) CreateNewUser(db *gorm.DB, username, email, password string) (*entity.UserAuth, *entity.UserInfo, *entity.UserAuthRole, error) {
 	var num int64
 	db.Model(&entity.UserInfo{}).Count(&num)
 	number := strconv.FormatInt(num, 10)
 
 	userInfo := &entity.UserInfo{
-		Email:    username,
+		Email:    email,
 		Nickname: "游客" + number,
 		Avatar:   "https://www.bing.com/rp/ar_9isCNU2Q-VG1yEDDHnx8HAFQ.png",
 		Intro:    "我是这个程序的第" + number + "个用户",
 	}
+
+	var userAuth *entity.UserAuth
+	var userRole *entity.UserAuthRole
 
 	err := db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(userInfo).Error; err != nil {
 			return err
 		}
 
-		userAuth := &entity.UserAuth{
+		userAuth = &entity.UserAuth{
 			Username:   username,
 			Password:   password,
 			UserInfoId: userInfo.ID,
@@ -73,7 +79,7 @@ func (r *authRepository) CreateNewUser(db *gorm.DB, username, password string) (
 			return err
 		}
 
-		userRole := &entity.UserAuthRole{
+		userRole = &entity.UserAuthRole{
 			UserAuthId: userAuth.ID,
 			RoleId:     2, // 默认身份为游客
 		}
@@ -84,5 +90,32 @@ func (r *authRepository) CreateNewUser(db *gorm.DB, username, password string) (
 		return nil
 	})
 
-	return nil, userInfo, nil, err
+	return userAuth, userInfo, userRole, err
+}
+
+func (r *authRepository) GetUserAuthInfoById(db *gorm.DB, id int) (*entity.UserAuth, error) {
+	var userAuth entity.UserAuth
+	err := db.Preload("Roles").Preload("UserInfo").First(&userAuth, id).Error
+	return &userAuth, err
+}
+
+func (r *authRepository) GetResource(db *gorm.DB, url, method string) (*entity.Resource, error) {
+	var resource entity.Resource
+	err := db.Where("url = ? AND method = ?", url, method).First(&resource).Error
+	return &resource, err
+}
+
+func (r *authRepository) CheckRoleAuth(db *gorm.DB, roleId int, url, method string) (bool, error) {
+	var role entity.Role
+	if err := db.Preload("Resources").First(&role, roleId).Error; err != nil {
+		return false, err
+	}
+
+	for _, res := range role.Resources {
+		if res.Anonymous || (res.Url == url && res.Method == method) {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
