@@ -41,6 +41,27 @@ func (ctrl *AuthController) Login(c *gin.Context) {
 	response.Success(c, vo)
 }
 
+func (ctrl *AuthController) AdminLogin(c *gin.Context) {
+	var req request.LoginReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
+		return
+	}
+
+	vo, err := ctrl.svc.AdminLogin(c, req)
+	if err != nil {
+		response.BizError(c, err)
+		return
+	}
+
+	session := sessions.Default(c)
+	session.Set(global.CTX_USER_AUTH, vo.ID)
+	session.Set(global.CTX_IS_SUPER, vo.IsSuper)
+	session.Save()
+
+	response.Success(c, vo)
+}
+
 func (ctrl *AuthController) Logout(c *gin.Context) {
 	session := sessions.Default(c)
 	val := session.Get(global.CTX_USER_AUTH)

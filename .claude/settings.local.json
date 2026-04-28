@@ -8,7 +8,8 @@
       "Bash(curl -s http://127.0.0.1:8764/api/config)",
       "Bash(powershell.exe *)",
       "Bash(curl *)",
-      "Bash(bash .claude/bugs/api_test.sh)"
+      "Bash(bash .claude/bugs/api_test.sh)",
+      "Bash(go test *)"
     ]
   }
 }

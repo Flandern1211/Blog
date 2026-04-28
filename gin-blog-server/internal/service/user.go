@@ -74,7 +74,21 @@ func (s *userService) Update(c *gin.Context, req request.UpdateUserReq) error {
 
 func (s *userService) UpdateDisable(c *gin.Context, req request.UpdateUserDisableReq) error {
 	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	return s.repo.UpdateUserDisable(db, req.UserAuthId, req.IsDisable)
+	if err := s.repo.UpdateUserDisable(db, req.UserAuthId, req.IsDisable); err != nil {
+		return err
+	}
+
+	// 禁用用户时同步强制下线
+	if req.IsDisable {
+		rdb := c.MustGet(global.CTX_RDB).(*global.RedisClient)
+		rctx := c.Request.Context()
+		onlineKey := global.ONLINE_USER + strconv.Itoa(req.UserAuthId)
+		offlineKey := global.OFFLINE_USER + strconv.Itoa(req.UserAuthId)
+		rdb.Del(rctx, onlineKey)
+		rdb.Set(rctx, offlineKey, "1", time.Hour)
+	}
+
+	return nil
 }
 
 func (s *userService) GetList(c *gin.Context, query request.UserQuery) ([]response.UserVO, int64, error) {

@@ -5,6 +5,7 @@ import (
 	g "gin-blog/internal/global"
 	"gin-blog/internal/model/dto/request"
 	"gin-blog/internal/model/dto/response"
+	"gin-blog/internal/model/entity"
 	"gin-blog/internal/repository"
 	"gin-blog/internal/utils"
 	pkgErrors "gin-blog/pkg/errors"
@@ -18,6 +19,7 @@ import (
 
 type AuthService interface {
 	Login(c *gin.Context, req request.LoginReq) (*response.LoginVO, error)
+	AdminLogin(c *gin.Context, req request.LoginReq) (*response.LoginVO, error)
 	Register(c *gin.Context, req request.RegisterReq) error
 	VerifyCode(c *gin.Context, code string) error
 	Logout(c *gin.Context, authId int) error
@@ -32,20 +34,23 @@ func NewAuthService(repo repository.AuthRepository) AuthService {
 	return &authService{repo: repo}
 }
 
-func (s *authService) Login(c *gin.Context, req request.LoginReq) (*response.LoginVO, error) {
+func (s *authService) doLogin(c *gin.Context, req request.LoginReq) (*entity.UserAuth, *entity.UserInfo, []int, string, string, error) {
 	db := c.MustGet(g.CTX_DB).(*gorm.DB)
-	rdb := c.MustGet(g.CTX_RDB).(*g.RedisClient)
 
 	userAuth, err := s.repo.GetUserAuthInfoByName(db, req.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, pkgErrors.NewDefault(pkgErrors.CodeUserNotFound)
+			return nil, nil, nil, "", "", pkgErrors.NewDefault(pkgErrors.CodeUserNotFound)
 		}
-		return nil, pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
+		return nil, nil, nil, "", "", pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
+	}
+
+	if userAuth.IsDisable {
+		return nil, nil, nil, "", "", pkgErrors.NewDefault(pkgErrors.CodeUserDisabled)
 	}
 
 	if !utils.BcryptCheck(req.Password, userAuth.Password) {
-		return nil, pkgErrors.NewDefault(pkgErrors.CodeInvalidCredentials)
+		return nil, nil, nil, "", "", pkgErrors.NewDefault(pkgErrors.CodeInvalidCredentials)
 	}
 
 	ipAddress := utils.IP.GetIpAddress(c)
@@ -54,17 +59,23 @@ func (s *authService) Login(c *gin.Context, req request.LoginReq) (*response.Log
 	userInfo, err := s.repo.GetUserInfoById(db, userAuth.UserInfoId)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, pkgErrors.NewDefault(pkgErrors.CodeUserNotFound)
+			return nil, nil, nil, "", "", pkgErrors.NewDefault(pkgErrors.CodeUserNotFound)
 		}
-		return nil, pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
+		return nil, nil, nil, "", "", pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
 	}
 
 	roleIds, err := s.repo.GetRoleIdsByUserId(db, userAuth.ID)
 	if err != nil {
-		return nil, pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
+		return nil, nil, nil, "", "", pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
 	}
 
+	return userAuth, userInfo, roleIds, ipAddress, ipSource, nil
+}
+
+func (s *authService) buildLoginVO(c *gin.Context, userAuth *entity.UserAuth, userInfo *entity.UserInfo, roleIds []int, ipAddress, ipSource string) (*response.LoginVO, error) {
+	rdb := c.MustGet(g.CTX_RDB).(*g.RedisClient)
 	rctx := c.Request.Context()
+
 	articleLikeSet, err := rdb.SMembers(rctx, g.ARTICLE_USER_LIKE_SET+strconv.Itoa(userAuth.ID)).Result()
 	if err != nil {
 		return nil, pkgErrors.NewDefault(pkgErrors.CodeRedisOpError)
@@ -80,13 +91,13 @@ func (s *authService) Login(c *gin.Context, req request.LoginReq) (*response.Log
 		return nil, pkgErrors.NewDefault(pkgErrors.CodeTokenCreateErr)
 	}
 
+	db := c.MustGet(g.CTX_DB).(*gorm.DB)
 	err = s.repo.UpdateUserLoginInfo(db, userAuth.ID, ipAddress, ipSource)
 	if err != nil {
 		return nil, pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
 	}
 
-	offlineKey := g.OFFLINE_USER + strconv.Itoa(userAuth.ID)
-	rdb.Del(rctx, offlineKey).Result()
+	rdb.Del(rctx, g.OFFLINE_USER+strconv.Itoa(userAuth.ID)).Result()
 
 	return &response.LoginVO{
 		UserInfo:       *userInfo,
@@ -95,6 +106,36 @@ func (s *authService) Login(c *gin.Context, req request.LoginReq) (*response.Log
 		Token:          token,
 		IsSuper:        userAuth.IsSuper,
 	}, nil
+}
+
+func (s *authService) Login(c *gin.Context, req request.LoginReq) (*response.LoginVO, error) {
+	userAuth, userInfo, roleIds, ipAddress, ipSource, err := s.doLogin(c, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.buildLoginVO(c, userAuth, userInfo, roleIds, ipAddress, ipSource)
+}
+
+func (s *authService) AdminLogin(c *gin.Context, req request.LoginReq) (*response.LoginVO, error) {
+	userAuth, userInfo, roleIds, ipAddress, ipSource, err := s.doLogin(c, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// 非超级管理员需要校验是否有后台登录权限
+	if !userAuth.IsSuper {
+		db := c.MustGet(g.CTX_DB).(*gorm.DB)
+		hasResource, err := s.repo.CheckUserHasResource(db, userAuth.ID, g.RESOURCE_BACKEND_LOGIN, g.METHOD_BACKEND_LOGIN)
+		if err != nil {
+			return nil, pkgErrors.NewDefault(pkgErrors.CodeDbOpError)
+		}
+		if !hasResource {
+			return nil, pkgErrors.NewDefault(pkgErrors.CodeNoAdminAccess)
+		}
+	}
+
+	return s.buildLoginVO(c, userAuth, userInfo, roleIds, ipAddress, ipSource)
 }
 
 func (s *authService) Logout(c *gin.Context, authId int) error {

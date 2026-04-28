@@ -16,6 +16,7 @@ type AuthRepository interface {
 	GetUserAuthInfoById(db *gorm.DB, id int) (*entity.UserAuth, error)
 	GetResource(db *gorm.DB, url, method string) (*entity.Resource, error)
 	CheckRoleAuth(db *gorm.DB, roleId int, url, method string) (bool, error)
+	CheckUserHasResource(db *gorm.DB, userId int, url, method string) (bool, error)
 }
 
 type authRepository struct{}
@@ -118,4 +119,19 @@ func (r *authRepository) CheckRoleAuth(db *gorm.DB, roleId int, url, method stri
 	}
 
 	return false, nil
+}
+
+func (r *authRepository) CheckUserHasResource(db *gorm.DB, userId int, url, method string) (bool, error) {
+	var count int64
+	err := db.Table("role_resource").
+		Joins("JOIN user_auth_role ON user_auth_role.role_id = role_resource.role_id").
+		Joins("JOIN resource ON resource.id = role_resource.resource_id").
+		Where("user_auth_role.user_auth_id = ?", userId).
+		Where("resource.url = ?", url).
+		Where("resource.request_method = ?", method).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }

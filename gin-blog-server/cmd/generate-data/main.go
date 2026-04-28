@@ -266,8 +266,9 @@ func generateDefaultResources(db *gorm.DB) {
 		// 操作日志模块
 		{Name: "日志列表", ParentId: parents[12].ID, Url: "/operation/log/list", Method: "GET"},
 		{Name: "删除操作日志", ParentId: parents[12].ID, Url: "/operation/log", Method: "DELETE"},
+		// 后台登录权限
+		{Name: "后台登录", Url: "/api/admin/login", Method: "POST"},
 	}
-
 	for i := range resources {
 		if err := db.Create(&resources[i]).Error; err != nil {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed") || strings.Contains(err.Error(), "Duplicate entry") {

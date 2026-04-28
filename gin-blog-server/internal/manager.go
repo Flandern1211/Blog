@@ -123,6 +123,9 @@ func registerBaseHandler(r *gin.Engine) {
 func registerAdminHandler(r *gin.Engine) {
 	admin := r.Group("/api")
 
+	// 管理员登录路由（无需鉴权，登录时校验后台权限）
+	auth.RegisterAdminAuthRouter(admin, authCtrl)
+
 	// !注意使用中间件的顺序
 	admin.Use(middleware.JWTAuth())
 	admin.Use(middleware.PermissionCheck())

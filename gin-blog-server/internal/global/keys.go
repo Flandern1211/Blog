@@ -38,3 +38,9 @@ const (
 	CONFIG_IS_COMMENT_REVIEW = "is_comment_review"
 	CONFIG_ABOUT             = "about"
 )
+
+// Resource 标识
+const (
+	RESOURCE_BACKEND_LOGIN = "/api/admin/login"
+	METHOD_BACKEND_LOGIN   = "POST"
+)

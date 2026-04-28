@@ -15,3 +15,7 @@ func RegisterAuthRouter(r *gin.RouterGroup, ctrl *AuthController) {
 		auth.GET("/verify", ctrl.VerifyCode)
 	}
 }
+
+func RegisterAdminAuthRouter(r *gin.RouterGroup, ctrl *AuthController) {
+	r.POST("/admin/login", ctrl.AdminLogin)
+}
