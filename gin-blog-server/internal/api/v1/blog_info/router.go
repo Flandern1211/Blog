@@ -4,24 +4,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterBlogInfoRouter(r *gin.RouterGroup, blogCtrl *BlogInfoController, pageCtrl *PageController) {
-	// BlogInfo & Config
-	blog := r.Group("/")
-	{
-		blog.GET("/home", blogCtrl.GetHomeInfo)
-		blog.GET("/about", blogCtrl.GetAbout)
-		blog.PUT("/about", blogCtrl.UpdateAbout)
-		blog.POST("/report", blogCtrl.Report)
+func RegisterBlogInfoRouter(r *gin.RouterGroup, ctrl *BlogInfoController) {
+	r.GET("/home", ctrl.GetHomeInfo)
+	r.POST("/report", ctrl.Report)
+}
 
-		blog.GET("/config", blogCtrl.GetConfigMap)
-		blog.PUT("/config", blogCtrl.UpdateConfigMap)
-	}
-
-	// Page
-	page := r.Group("/page")
+func RegisterSettingRouter(r *gin.RouterGroup, ctrl *BlogInfoController) {
+	setting := r.Group("/setting")
 	{
-		page.GET("/list", pageCtrl.GetList)
-		page.POST("", pageCtrl.SaveOrUpdate)
-		page.DELETE("", pageCtrl.Delete)
+		setting.GET("/about", ctrl.GetAbout)
+		setting.PUT("/about", ctrl.UpdateAbout)
 	}
 }

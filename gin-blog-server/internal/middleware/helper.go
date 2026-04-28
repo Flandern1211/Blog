@@ -34,14 +34,15 @@ func CurrentUserAuth(c *gin.Context) (*entity.UserAuth, error) {
 
 	// 2. 从 session 中获取 id
 	session := sessions.Default(c)
-	id := session.Get(key)
-	if id == nil {
-		return nil, errors.New("session 中没有 user_auth_id")
+	val := session.Get(key)
+	id, ok := val.(int)
+	if !ok {
+		return nil, errors.New("session 中没有有效的 user_auth_id")
 	}
 
 	// 3. 根据 id 从数据库获取
 	db := GetDB(c)
-	user, err := authRepo.GetUserAuthInfoById(db, id.(int))
+	user, err := authRepo.GetUserAuthInfoById(db, id)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +62,8 @@ func GetUserID(c *gin.Context) int {
 
 	// 2. 从 session 中获取 id
 	session := sessions.Default(c)
-	if id := session.Get(g.CTX_USER_AUTH); id != nil {
-		return id.(int)
+	if id, ok := session.Get(g.CTX_USER_AUTH).(int); ok {
+		return id
 	}
 
 	return 0
@@ -71,14 +72,16 @@ func GetUserID(c *gin.Context) int {
 // 判断当前登录用户是否为超级管理员
 func IsSuper(c *gin.Context) bool {
 	// 1. 从 gin context 中获取
-	if isSuper, exist := c.Get(g.CTX_IS_SUPER); exist && isSuper != nil {
-		return isSuper.(bool)
+	if val, exist := c.Get(g.CTX_IS_SUPER); exist && val != nil {
+		if isSuper, ok := val.(bool); ok {
+			return isSuper
+		}
 	}
 
 	// 2. 从 session 中获取
 	session := sessions.Default(c)
-	if isSuper := session.Get(g.CTX_IS_SUPER); isSuper != nil {
-		return isSuper.(bool)
+	if isSuper, ok := session.Get(g.CTX_IS_SUPER).(bool); ok {
+		return isSuper
 	}
 
 	return false

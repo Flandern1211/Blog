@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { marked } from 'marked'
 import hljs from 'highlight.js/lib/core'
@@ -52,26 +52,57 @@ const data = ref({
 // 文章内容
 const previewRef = ref(null)
 const loading = ref(true)
+let mounted = true // 标记组件是否已挂载，防止销毁后异步操作
+let loadId = 0 // 标记当前请求，防止竞态
 
-onMounted(async () => {
+async function loadArticle() {
+  const id = ++loadId
+  loading.value = true
+  data.value.content = ''
   try {
     const resp = await api.getArticleDetail(route.params.id)
-    data.value = resp.data
+    if (!mounted || id !== loadId) return
+    // Merge to preserve defaults: API response may have null array/object fields
+    data.value = { ...data.value, ...resp.data }
+    // 确保数组/对象字段不为 null，防止子组件访问 .length 时报错
+    data.value.recommend_articles ??= []
+    data.value.tags ??= []
+    data.value.newest_articles ??= []
+    data.value.category ??= {}
+    data.value.next_article ??= {}
+    data.value.last_article ??= {}
     // marked 解析 markdown 文本
     data.value.content = await marked.parse(resp.data.content, { async: true })
+    if (!mounted || id !== loadId) return
     await nextTick()
+    if (!mounted || id !== loadId) return
     // highlight.js 代码高亮
-    document.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el))
-    // MathJax 渲染公式
-    window.MathJax.typeset()
+    document.querySelectorAll('pre code').forEach(el => {
+      try { hljs.highlightElement(el) } catch (e) { console.warn('hljs error:', e) }
+    })
+    // MathJax 渲染公式（返回 Promise，需 await 避免后续冲突）
+    try {
+      await window.MathJax?.typesetPromise?.()
+      if (!mounted || id !== loadId) return
+    }
+    catch {
+      // MathJax 未加载或出错时静默处理
+    }
   }
   catch (err) {
     console.error(err)
   }
   finally {
-    loading.value = false
+    if (mounted && id === loadId) loading.value = false
   }
-})
+}
+
+onMounted(loadArticle)
+
+onBeforeUnmount(() => { mounted = false })
+
+// 监听路由参数变化（兼容组件未重新创建的场景）
+watch(() => route.params.id, () => { loadArticle() })
 
 const styleVal = computed(() =>
   data.value.img

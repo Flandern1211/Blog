@@ -1,7 +1,7 @@
 <script setup>
 import { defineOptions, h, onActivated, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NButton, NImage, NInput, NPopconfirm, NSelect, NSwitch, NTabPane, NTabs, NTag, NUpload } from 'naive-ui'
+import { NButton, NImage, NInput, NPopconfirm, NSelect, NSwitch, NTabPane, NTabs, NTag } from 'naive-ui'
 
 import CommonPage from '@/components/common/CommonPage.vue'
 import QueryItem from '@/components/crud/QueryItem.vue'
@@ -42,8 +42,12 @@ const { handleDelete } = useCRUD({
 })
 
 onMounted(() => {
-  api.getCategoryOption().then(res => (categoryOptions.value = res.data))
-  api.getTagOption().then(res => (tagOptions.value = res.data))
+  api.getCategoryOption().then(res => {
+    categoryOptions.value = (res.data || []).map(c => ({ label: c.name, value: c.id }))
+  })
+  api.getTagOption().then(res => {
+    tagOptions.value = (res.data || []).map(t => ({ label: t.name, value: t.id }))
+  })
   handleChangeTab('all') // 默认查看全部
 })
 
@@ -83,7 +87,7 @@ const columns = [
     align: 'center',
     ellipsis: { tooltip: true },
     render(row) {
-      return h('div', row.category.name || '无')
+      return h('div', row.category?.name || '无')
     },
   },
   {
@@ -189,9 +193,9 @@ const columns = [
               size: 'small',
               type: 'primary',
               secondary: true,
-              onClick: () => router.push(`/article/write/${row.id}`), // 携带参数前往 写文章 页面
+              onClick: () => router.push(`/article/write/${row.id}`), // 携带参数前往写文章页面进行编辑
             },
-            { default: () => '查看', icon: () => h('i', { class: 'i-majesticons:eye-line' }) },
+            { default: () => '修改', icon: () => h('i', { class: 'i-material-symbols:edit-outline' }) },
           ),
         h(
           NPopconfirm,
@@ -277,26 +281,72 @@ function handleChangeTab(value) {
   $table.value?.handleSearch()
 }
 
-// 文件上传前检查类型
-function beforeUpload(data) {
-  if (!data.file.name.endsWith('.md')) {
-    $message.error('只能上传 .md 格式的文件，请重新上传')
-    return false
+// 导入 md 文件
+const importRef = ref(null)
+
+async function handleImportMd() {
+  const files = importRef.value?.files
+  if (!files?.length) return
+
+  let imported = 0
+  for (const file of files) {
+    if (!file.name.endsWith('.md')) {
+      $message.warning(`跳过非 md 文件: ${file.name}`)
+      continue
+    }
+    try {
+      const content = await readFileAsText(file)
+      const title = file.name.replace(/\.md$/i, '')
+      // 检测本地图片引用，记录日志提醒用户
+      const localImgs = findLocalImages(content)
+      if (localImgs.length) {
+        console.warn(`[${title}] 发现 ${localImgs.length} 张本地图片引用，导入后无法显示，请使用粘贴图片功能重新插入`, localImgs)
+      }
+
+      await api.saveOrUpdateArticle({
+        title,
+        status: 3, // 草稿
+        type: 1,   // 原创
+        content,
+        tag_names: [],
+        category_name: '',
+      })
+      imported++
+    }
+    catch (err) {
+      console.error(`导入失败: ${file.name}`, err)
+      $message.error(`导入失败: ${file.name}`)
+    }
   }
-  return true
+
+  if (imported > 0) {
+    $message.success(`成功导入 ${imported} 篇文章（草稿）`)
+    importRef.value.value = ''
+    $table.value?.handleSearch()
+  }
 }
 
-// 文件上传后的操作
-function afterUpload({ event }) {
-  const respStr = (event?.target).response
-  const res = JSON.parse(respStr)
-  if (res.code === 0) {
-    $table.value?.handleSearch()
-    $message.success('文章导入成功！')
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = e => resolve(e.target.result)
+    reader.onerror = reject
+    reader.readAsText(file)
+  })
+}
+
+// 查找 md 内容中的本地图片引用
+function findLocalImages(content) {
+  const refs = []
+  const regex = /!\[.*?\]\(([^)]+)\)|<img[^>]+src=["']([^"']+)["']/gi
+  let match
+  while ((match = regex.exec(content)) !== null) {
+    const path = match[1] || match[2]
+    if (path && !path.startsWith('http') && !path.startsWith('data:')) {
+      refs.push(path)
+    }
   }
-  else {
-    $message.error('文章导入失败！')
-  }
+  return refs
 }
 
 function downloadFile(content, fileName) {
@@ -344,20 +394,20 @@ function downloadFile(content, fileName) {
         批量导出
       </NButton>
       <div class="inline-block">
-        <NUpload
-          action="/api/article/import"
-          :show-file-list="false"
+        <input
+          ref="importRef"
+          type="file"
+          accept=".md"
           multiple
-          @before-upload="beforeUpload"
-          @finish="afterUpload"
+          style="display: none"
+          @change="handleImportMd"
         >
-          <NButton type="success">
-            <template #icon>
-              <i class="i-mdi:import" />
-            </template>
-            批量导入
-          </NButton>
-        </NUpload>
+        <NButton type="success" @click="importRef?.click()">
+          <template #icon>
+            <i class="i-mdi:import" />
+          </template>
+          批量导入
+        </NButton>
       </div>
     </template>
 

@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(go mod init:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(go run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8764/api/config)",
+      "Bash(curl -s http://127.0.0.1:8764/api/config)",
+      "Bash(powershell.exe *)",
+      "Bash(curl *)",
+      "Bash(bash .claude/bugs/api_test.sh)"
     ]
   }
 }

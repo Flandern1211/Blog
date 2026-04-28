@@ -7,6 +7,11 @@ import (
 func RegisterAuthRouter(r *gin.RouterGroup, ctrl *AuthController) {
 	r.POST("/login", ctrl.Login)
 	r.POST("/register", ctrl.Register)
+	r.POST("/code", ctrl.SendCode)
 	r.GET("/logout", ctrl.Logout)
-	r.GET("/verify", ctrl.VerifyCode)
+
+	auth := r.Group("/auth")
+	{
+		auth.GET("/verify", ctrl.VerifyCode)
+	}
 }

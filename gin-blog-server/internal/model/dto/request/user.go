@@ -34,3 +34,10 @@ type UserQuery struct {
 type ForceOfflineReq struct {
 	UserInfoId int `json:"user_info_id"`
 }
+
+// 前台用户通过验证码修改密码
+type UpdatePasswordByCodeReq struct {
+	Email    string `json:"email" binding:"required"`
+	Code     string `json:"code" binding:"required"`
+	Password string `json:"password" binding:"required,min=4,max=20"`
+}

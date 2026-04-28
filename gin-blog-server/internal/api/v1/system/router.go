@@ -4,19 +4,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterSystemRouter(r *gin.RouterGroup, linkCtrl *LinkController, optCtrl *OperationLogController) {
-	// FriendLink
+func RegisterLinkRouter(r *gin.RouterGroup, ctrl *LinkController) {
 	link := r.Group("/link")
 	{
-		link.GET("/list", linkCtrl.GetList)
-		link.POST("", linkCtrl.SaveOrUpdate)
-		link.DELETE("", linkCtrl.Delete)
-	}
-
-	// OperationLog
-	opt := r.Group("/operation/log")
-	{
-		opt.GET("/list", optCtrl.GetList)
-		opt.DELETE("", optCtrl.Delete)
+		link.GET("/list", ctrl.GetList)
+		link.POST("", ctrl.SaveOrUpdate)
+		link.DELETE("", ctrl.Delete)
 	}
 }

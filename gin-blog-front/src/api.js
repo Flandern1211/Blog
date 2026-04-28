@@ -38,6 +38,8 @@ export default {
   getUser: () => request.get('/user/info', { needToken: true }),
   /** 修改当前用户信息 */
   updateUser: data => request.put('/user/info', data, { needToken: true }),
+  /** 通过验证码修改密码 */
+  updatePassword: data => request.put('/user/password', data, { needToken: true }),
   /** 留言 */
   saveMessage: data => request.post('/message', data, { needToken: true }),
   /** 评论 */

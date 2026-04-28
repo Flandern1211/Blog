@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	g "gin-blog/internal/global"
 	pkgErrors "gin-blog/pkg/errors"
@@ -39,7 +40,8 @@ func ListenOnline() gin.HandlerFunc {
 		}
 
 		// 每次发送请求会更新 Redis 中的在线状态: 重新计算 10 分钟
-		rdb.Set(ctx, onlineKey, auth, 10*time.Minute)
+		authJson, _ := json.Marshal(auth)
+		rdb.Set(ctx, onlineKey, string(authJson), 10*time.Minute)
 		c.Next()
 	}
 }

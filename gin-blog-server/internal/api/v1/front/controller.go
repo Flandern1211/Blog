@@ -48,12 +48,12 @@ func (ctrl *FrontController) GetArticleList(c *gin.Context) {
 		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
-	list, total, err := ctrl.articleSvc.GetBlogArticleList(c, query)
+	list, _, err := ctrl.articleSvc.GetBlogArticleList(c, query)
 	if err != nil {
 		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
-	response.PageSuccess(c, list, total, query.Page, query.Size)
+	response.Success(c, list)
 }
 
 func (ctrl *FrontController) GetArticleInfo(c *gin.Context) {
@@ -65,6 +65,10 @@ func (ctrl *FrontController) GetArticleInfo(c *gin.Context) {
 
 	article, err := ctrl.articleSvc.GetBlogArticle(c, id)
 	if err != nil {
+		if err == errors.ErrNotFound {
+			response.Error(c, errors.CodeNotFound, errors.GetMessage(errors.CodeNotFound))
+			return
+		}
 		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
 	}
@@ -197,7 +201,7 @@ func (ctrl *FrontController) GetCommentList(c *gin.Context) {
 }
 
 func (ctrl *FrontController) GetCommentReplyList(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("comment_id"))
 	if err != nil {
 		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
@@ -222,6 +226,8 @@ func (ctrl *FrontController) AddComment(c *gin.Context) {
 		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
+
+	req.Content = template.HTMLEscapeString(req.Content)
 
 	user, err := middleware.CurrentUserAuth(c)
 	if err != nil {

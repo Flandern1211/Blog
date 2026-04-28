@@ -1,14 +1,13 @@
 package article
 
 import (
+	"gin-blog/internal/middleware"
 	"gin-blog/internal/model/dto/request"
 	"gin-blog/internal/service"
 	"gin-blog/pkg/errors"
 	"gin-blog/pkg/response"
 	"strconv"
 
-	g "gin-blog/internal/global"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,7 +36,11 @@ func (ctrl *ArticleController) GetList(c *gin.Context) {
 }
 
 func (ctrl *ArticleController) GetById(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
+		return
+	}
 	vo, err := ctrl.svc.GetById(c, id)
 	if err != nil {
 		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
@@ -52,12 +55,11 @@ func (ctrl *ArticleController) SaveOrUpdate(c *gin.Context) {
 		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
 		return
 	}
-	val := sessions.Default(c).Get(g.CTX_USER_AUTH)
-	if val == nil {
+	authId := middleware.GetUserID(c)
+	if authId == 0 {
 		response.Error(c, errors.CodeNoLogin, errors.GetMessage(errors.CodeNoLogin))
 		return
 	}
-	authId := val.(int)
 	if err := ctrl.svc.SaveOrUpdate(c, authId, req); err != nil {
 		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
@@ -102,118 +104,4 @@ func (ctrl *ArticleController) Delete(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
-}
-
-type CategoryController struct {
-	svc service.ArticleService
-}
-
-func NewCategoryController(svc service.ArticleService) *CategoryController {
-	return &CategoryController{svc: svc}
-}
-
-func (ctrl *CategoryController) GetList(c *gin.Context) {
-	var query request.CategoryQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
-		return
-	}
-	list, total, err := ctrl.svc.GetCategoryList(c, query)
-	if err != nil {
-		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
-		return
-	}
-	response.PageSuccess(c, list, total, query.Page, query.Size)
-}
-
-func (ctrl *CategoryController) SaveOrUpdate(c *gin.Context) {
-	var req request.AddOrEditCategoryReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
-		return
-	}
-	if err := ctrl.svc.SaveOrUpdateCategory(c, req); err != nil {
-		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
-		return
-	}
-	response.Success(c, nil)
-}
-
-func (ctrl *CategoryController) Delete(c *gin.Context) {
-	var ids []int
-	if err := c.ShouldBindJSON(&ids); err != nil {
-		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
-		return
-	}
-	if err := ctrl.svc.DeleteCategories(c, ids); err != nil {
-		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
-		return
-	}
-	response.Success(c, nil)
-}
-
-func (ctrl *CategoryController) GetOption(c *gin.Context) {
-	list, err := ctrl.svc.GetCategoryOption(c)
-	if err != nil {
-		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
-		return
-	}
-	response.Success(c, list)
-}
-
-type TagController struct {
-	svc service.ArticleService
-}
-
-func NewTagController(svc service.ArticleService) *TagController {
-	return &TagController{svc: svc}
-}
-
-func (ctrl *TagController) GetList(c *gin.Context) {
-	var query request.TagQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
-		return
-	}
-	list, total, err := ctrl.svc.GetTagList(c, query)
-	if err != nil {
-		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
-		return
-	}
-	response.PageSuccess(c, list, total, query.Page, query.Size)
-}
-
-func (ctrl *TagController) SaveOrUpdate(c *gin.Context) {
-	var req request.AddOrEditTagReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
-		return
-	}
-	if err := ctrl.svc.SaveOrUpdateTag(c, req); err != nil {
-		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
-		return
-	}
-	response.Success(c, nil)
-}
-
-func (ctrl *TagController) Delete(c *gin.Context) {
-	var ids []int
-	if err := c.ShouldBindJSON(&ids); err != nil {
-		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
-		return
-	}
-	if err := ctrl.svc.DeleteTags(c, ids); err != nil {
-		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
-		return
-	}
-	response.Success(c, nil)
-}
-
-func (ctrl *TagController) GetOption(c *gin.Context) {
-	list, err := ctrl.svc.GetTagOption(c)
-	if err != nil {
-		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
-		return
-	}
-	response.Success(c, list)
 }

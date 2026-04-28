@@ -126,8 +126,8 @@ const columns = [
     render(row) {
       return h(
         NTag,
-        { type: commentTypeMap[row.type].tag },
-        { default: () => commentTypeMap[row.type].name },
+        { type: commentTypeMap[row.type]?.tag || 'default' },
+        { default: () => commentTypeMap[row.type]?.name || '未知' },
       )
     },
   },

@@ -6,28 +6,30 @@ const { previewRef } = defineProps({
   previewRef: { type: Object, required: true, },
 })
 
+const selectAnchor = ref('')
+const anchors = ref([])
+const headings = ref([])
+
 onMounted(() => {
   buildAnchors()
 })
 
-const selectAnchor = ref('')
-const anchors = ref([])
-const headings = Array.from(previewRef.querySelectorAll('h1,h2,h3,h4,h5,h6'))
-
 function buildAnchors() {
+  const els = Array.from(previewRef.querySelectorAll('h1,h2,h3,h4,h5,h6'))
+  headings.value = els
   // 用于确认层级
-  const titleList = Array.from(headings).filter(t => !!t.innerText.trim())
+  const titleList = els.filter(t => !!t.innerText.trim())
   const hTags = Array.from(new Set(titleList.map(t => t.tagName))).sort()
 
   let count = 0 // 解决重名问题
-  for (let i = 0; i < headings.length; i++) {
-    const anchor = headings[i].textContent.trim()
+  for (let i = 0; i < els.length; i++) {
+    const anchor = els[i].textContent.trim()
     // 手动构造 id, 在后面加上序号防止重名
-    headings[i].id = `${anchor}-${count++}`
+    els[i].id = `${anchor}-${count++}`
     anchors.value.push({
-      id: headings[i].id,
-      name: headings[i].innerText,
-      indent: hTags.indexOf(headings[i].tagName),
+      id: els[i].id,
+      name: els[i].innerText,
+      indent: hTags.indexOf(els[i].tagName),
     })
   }
 }
@@ -46,7 +48,7 @@ function handleClickAnchor(id) {
 const { y } = useWindowScroll()
 watchThrottled(y, () => {
   anchors.value.forEach((e) => {
-    const value = headings.find(ee => ee.id === e.id)
+    const value = headings.value.find(ee => ee.id === e.id)
     if (value && y.value >= value.offsetTop - 50) { // 控制距离标题多远才算该标题
       selectAnchor.value = value.id
     }

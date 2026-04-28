@@ -105,8 +105,12 @@ router.afterEach((to) => {
 NProgress.configure({ showSpinner: false })
 
 router.beforeEach((to, from, next) => {
-  NProgress.start()
-  for (let i = 0; i < 5; i++) NProgress.inc()
-  setTimeout(() => NProgress.done(), 300)
+  try {
+    NProgress.start()
+    for (let i = 0; i < 5; i++) NProgress.inc()
+    setTimeout(() => NProgress.done(), 300)
+  } catch (e) {
+    console.warn('NProgress error:', e)
+  }
   next()
 })

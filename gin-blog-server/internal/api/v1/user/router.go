@@ -5,9 +5,14 @@ import (
 )
 
 func RegisterUserRouter(r *gin.RouterGroup, ctrl *UserController) {
-	r.GET("/info", ctrl.GetInfo)
-	r.PUT("/current", ctrl.UpdateCurrent)
-	r.PUT("/update", ctrl.Update)
-	r.PUT("/disable", ctrl.UpdateDisable)
-	r.GET("/list", ctrl.GetList)
+	user := r.Group("/user")
+	{
+		user.GET("/list", ctrl.GetList)
+		user.PUT("", ctrl.Update)
+		user.PUT("/disable", ctrl.UpdateDisable)
+		user.GET("/info", ctrl.GetInfo)
+		user.PUT("/current", ctrl.UpdateCurrent)
+		user.GET("/online", ctrl.GetOnlineList)
+		user.POST("/offline/:id", ctrl.ForceOffline)
+	}
 }

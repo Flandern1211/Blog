@@ -47,7 +47,7 @@ func NewInteractionService(repo repository.InteractionRepository, blogInfoRepo r
 // Message implementations
 func (s *interactionService) GetMessageList(c *gin.Context, query request.MessageQuery) ([]entity.Message, int64, error) {
 	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	return s.repo.GetMessageList(db, query.Page, query.Size, query.Nickname, query.IsReview)
+	return s.repo.GetMessageList(db, query.GetPage(), query.GetSize(), query.Nickname, query.IsReview)
 }
 
 func (s *interactionService) DeleteMessages(c *gin.Context, ids []int) error {
@@ -63,7 +63,7 @@ func (s *interactionService) UpdateMessagesReview(c *gin.Context, req request.Up
 // Comment implementations
 func (s *interactionService) GetCommentList(c *gin.Context, query request.CommentQuery) ([]entity.Comment, int64, error) {
 	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	return s.repo.GetCommentList(db, query.Page, query.Size, query.Type, query.IsReview, query.Nickname)
+	return s.repo.GetCommentList(db, query.GetPage(), query.GetSize(), query.Type, query.IsReview, query.Nickname)
 }
 
 func (s *interactionService) DeleteComments(c *gin.Context, ids []int) error {
@@ -110,7 +110,7 @@ func (s *interactionService) GetFrontCommentList(c *gin.Context, query request.F
 	rdb := c.MustGet(global.CTX_RDB).(*global.RedisClient)
 	rctx := c.Request.Context()
 
-	comments, replyMap, total, err := s.repo.GetFrontCommentList(db, query.Page, query.Size, query.TopicId, query.Type)
+	comments, replyMap, total, err := s.repo.GetFrontCommentList(db, query.GetPage(), query.GetSize(), query.TopicId, query.Type)
 	if err != nil {
 		return nil, 0, err
 	}

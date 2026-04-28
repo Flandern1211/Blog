@@ -32,7 +32,7 @@ func NewSystemService(repo repository.SystemRepository) SystemService {
 // FriendLink implementations
 func (s *systemService) GetLinkList(c *gin.Context, query request.FriendLinkQuery) ([]entity.FriendLink, int64, error) {
 	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	return s.repo.GetLinkList(db, query.Page, query.Size, query.Keyword)
+	return s.repo.GetLinkList(db, query.GetPage(), query.GetSize(), query.Keyword)
 }
 
 func (s *systemService) SaveOrUpdateLink(c *gin.Context, req request.AddOrEditLinkReq) (*entity.FriendLink, error) {
@@ -56,7 +56,7 @@ func (s *systemService) DeleteLinks(c *gin.Context, ids []int) error {
 // OperationLog implementations
 func (s *systemService) GetOperationLogList(c *gin.Context, query request.OperationLogQuery) ([]entity.OperationLog, int64, error) {
 	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	return s.repo.GetOperationLogList(db, query.Page, query.Size, query.Keyword)
+	return s.repo.GetOperationLogList(db, query.GetPage(), query.GetSize(), query.Keyword)
 }
 
 func (s *systemService) DeleteOperationLogs(c *gin.Context, ids []int) error {

@@ -11,6 +11,7 @@ import UploadOne from '@/components//UploadOne.vue'
 
 import { articleTypeOptions } from '@/assets/config'
 import { useTagStore } from '@/store'
+import { request } from '@/utils'
 import api from '@/api'
 
 defineOptions({ name: '发布文章' })
@@ -141,6 +142,22 @@ const rules = {
   },
 }
 
+// 上传图片到服务器并插入编辑器
+const SERVER_URL = import.meta.env.VITE_SERVER_URL
+
+async function handleUploadImg(files, callback) {
+  const urls = await Promise.all(
+    Array.from(files).map(async (file) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await request.post('/upload', formData)
+      // 上传返回的是相对路径，需拼接完整 URL 才能正确显示
+      return `${SERVER_URL}/${res.data}`
+    })
+  )
+  callback(urls)
+}
+
 // 渲染标签
 function renderTag(tag, index) {
   return h(
@@ -179,8 +196,11 @@ function renderTag(tag, index) {
       </NButton>
     </div>
 
-    <!-- TODO: 文件上传 -->
-    <MdEditor v-model="formModel.content" style="height: calc(100vh - 245px)" />
+    <MdEditor
+      v-model="formModel.content"
+      style="height: calc(100vh - 245px)"
+      :on-upload-img="handleUploadImg"
+    />
 
     <CrudModal
       v-model:visible="modalVisible"

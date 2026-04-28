@@ -1,15 +1,15 @@
 package user
 
 import (
+	"strconv"
+
+	"gin-blog/internal/middleware"
 	"gin-blog/internal/model/dto/request"
 	"gin-blog/internal/service"
 	"gin-blog/pkg/errors"
 	"gin-blog/pkg/response"
 
-	g "gin-blog/internal/global"
-	"gi
-	"github.com/gin-contrib/sessions"
-	g "gin-blog/internal/global"
+	"github.com/gin-gonic/gin"
 )
 
 type UserController struct {
@@ -21,12 +21,11 @@ func NewUserController(svc service.UserService) *UserController {
 }
 
 func (ctrl *UserController) GetInfo(c *gin.Context) {
-	val := sessions.Default(c).Get(g.CTX_USER_AUTH)
-	if val == nil {
+	authId := middleware.GetUserID(c)
+	if authId == 0 {
 		response.Error(c, errors.CodeNoLogin, errors.GetMessage(errors.CodeNoLogin))
 		return
 	}
-	authId := val.(int)
 	vo, err := ctrl.svc.GetInfo(c, authId)
 	if err != nil {
 		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
@@ -42,12 +41,11 @@ func (ctrl *UserController) UpdateCurrent(c *gin.Context) {
 		return
 	}
 
-	authIdVal := sessions.Default(c).Get(g.CTX_USER_AUTH)
-	if authIdVal == nil {
+	authId := middleware.GetUserID(c)
+	if authId == 0 {
 		response.Error(c, errors.CodeNoLogin, errors.GetMessage(errors.CodeNoLogin))
 		return
 	}
-	authId := authIdVal.(int)
 	if err := ctrl.svc.UpdateCurrent(c, authId, req); err != nil {
 		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
 		return
@@ -96,4 +94,60 @@ func (ctrl *UserController) GetList(c *gin.Context) {
 		return
 	}
 	response.PageSuccess(c, list, total, query.Page, query.Size)
+}
+
+// 前台用户通过验证码修改密码
+func (ctrl *UserController) UpdatePasswordByCode(c *gin.Context) {
+	var req request.UpdatePasswordByCodeReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
+		return
+	}
+
+	authId := middleware.GetUserID(c)
+	if authId == 0 {
+		response.Error(c, errors.CodeNoLogin, errors.GetMessage(errors.CodeNoLogin))
+		return
+	}
+
+	if err := ctrl.svc.UpdatePasswordByCode(c, authId, req); err != nil {
+		response.BizError(c, err)
+		return
+	}
+	response.Success(c, nil)
+}
+
+func (ctrl *UserController) GetOnlineList(c *gin.Context) {
+	keyword := c.Query("keyword")
+	list, err := ctrl.svc.GetOnlineList(c, keyword)
+	if err != nil {
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
+		return
+	}
+	response.Success(c, list)
+}
+
+func (ctrl *UserController) ForceOffline(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
+		return
+	}
+
+	authId := middleware.GetUserID(c)
+	if authId == 0 {
+		response.Error(c, errors.CodeNoLogin, errors.GetMessage(errors.CodeNoLogin))
+		return
+	}
+
+	if authId == id {
+		response.Error(c, errors.CodeForceOfflineSelf, errors.GetMessage(errors.CodeForceOfflineSelf))
+		return
+	}
+
+	if err := ctrl.svc.ForceOffline(c, authId, id); err != nil {
+		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
+		return
+	}
+	response.Success(c, nil)
 }

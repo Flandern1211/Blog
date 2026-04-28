@@ -46,7 +46,7 @@ func NewPermissionService(repo repository.PermissionRepository) PermissionServic
 // Role implementations
 func (s *permissionService) GetRoleList(c *gin.Context, query request.PageQuery, keyword string) ([]response.RoleVO, int64, error) {
 	db := c.MustGet(g.CTX_DB).(*gorm.DB)
-	list, total, err := s.repo.GetRoleList(db, query.Page, query.Size, keyword)
+	list, total, err := s.repo.GetRoleList(db, query.GetPage(), query.GetSize(), keyword)
 	if err != nil {
 		return nil, 0, err
 	}

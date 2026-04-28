@@ -57,38 +57,3 @@ func (ctrl *LinkController) Delete(c *gin.Context) {
 	}
 	response.Success(c, nil)
 }
-
-type OperationLogController struct {
-	svc service.SystemService
-}
-
-func NewOperationLogController(svc service.SystemService) *OperationLogController {
-	return &OperationLogController{svc: svc}
-}
-
-func (ctrl *OperationLogController) GetList(c *gin.Context) {
-	var query request.OperationLogQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
-		return
-	}
-	list, total, err := ctrl.svc.GetOperationLogList(c, query)
-	if err != nil {
-		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
-		return
-	}
-	response.PageSuccess(c, list, total, query.Page, query.Size)
-}
-
-func (ctrl *OperationLogController) Delete(c *gin.Context) {
-	var ids []int
-	if err := c.ShouldBindJSON(&ids); err != nil {
-		response.Error(c, errors.CodeRequestError, errors.GetMessage(errors.CodeRequestError))
-		return
-	}
-	if err := ctrl.svc.DeleteOperationLogs(c, ids); err != nil {
-		response.Error(c, errors.CodeDbOpError, errors.GetMessage(errors.CodeDbOpError))
-		return
-	}
-	response.Success(c, nil)
-}

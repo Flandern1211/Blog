@@ -70,6 +70,26 @@ export async function addDynamicRoutes() {
 
     // 添加路由
     accessRoutes.forEach(addRoute)
+
+    // 手动注册 ArticleEdit 路由 (write/:id)，后端菜单数据中可能不包含此隐藏路由
+    if (!router.hasRoute('ArticleEdit')) {
+      const articleParent = router.getRoutes().find(r =>
+        r.path === '/article' && r.redirect
+      )
+      if (articleParent) {
+        router.addRoute(articleParent.name, {
+          name: 'ArticleEdit',
+          path: 'write/:id',
+          // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+          component: () => import('@/views/article/write/index.vue'),
+          isHidden: true,
+          meta: {
+            title: '编辑文章',
+            icon: 'icon-park-outline:write',
+          },
+        })
+      }
+    }
   }
   catch (err) {
     console.error('addDynamicRoutes Error: ', err)

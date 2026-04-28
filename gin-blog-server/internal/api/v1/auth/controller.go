@@ -44,8 +44,7 @@ func (ctrl *AuthController) Login(c *gin.Context) {
 func (ctrl *AuthController) Logout(c *gin.Context) {
 	session := sessions.Default(c)
 	val := session.Get(global.CTX_USER_AUTH)
-	if val != nil {
-		authId := val.(int)
+	if authId, ok := val.(int); ok {
 		session.Delete(global.CTX_USER_AUTH)
 		session.Save()
 		ctrl.svc.Logout(c, authId)

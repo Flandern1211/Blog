@@ -1,6 +1,8 @@
-name: create-api-go
+# 名称
+create-api-go
 
-description: 按照 Go 后端工程规范创建新的 API 端点 (Handler/Service/Repository)
+# 描述
+按照 Go 后端工程规范创建新的 API 端点 (Controller/Service/Repository)
 disable-model-invocation: true
 allowed-tools: Bash(go test ./...) Bash(go build ./...) Bash(golangci-lint run)
 按照我们的规范创建新的 Go API 端点: $ARGUMENTS
@@ -26,7 +28,7 @@ allowed-tools: Bash(go test ./...) Bash(go build ./...) Bash(golangci-lint run)
     ```
 
 
-### 3. Handler 层 (Controller)
+### 3. Controller 层 
 
 - **文件**: internal/handler/{resource}_handler.go
 - **职责**: 仅负责 **Bind**（参数绑定）、**Validate**（校验）和 **Render**（返回响应）。

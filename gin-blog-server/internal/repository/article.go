@@ -186,7 +186,7 @@ func (r *articleRepository) GetBlogArticleList(db *gorm.DB, page, size, category
 	query.Count(&total)
 	result := query.Preload("Tags").Preload("Category").
 		Order("is_top DESC, id DESC").
-		Offset((page - 1) * size).Limit(size).
+		Scopes(Paginate(page, size)).
 		Find(&data)
 
 	return data, total, result.Error
@@ -290,7 +290,7 @@ func (r *articleRepository) GetCategoryList(db *gorm.DB, page, size int, keyword
 	err := query.Group("c.id").
 		Order("c.updated_at DESC").
 		Count(&total).
-		Offset((page - 1) * size).Limit(size).
+		Scopes(Paginate(page, size)).
 		Find(&list).Error
 
 	return list, total, err
@@ -329,7 +329,7 @@ func (r *articleRepository) GetTagList(db *gorm.DB, page, size int, keyword stri
 	err := query.Group("t.id").
 		Order("t.updated_at DESC").
 		Count(&total).
-		Offset((page - 1) * size).Limit(size).
+		Scopes(Paginate(page, size)).
 		Find(&list).Error
 
 	return list, total, err

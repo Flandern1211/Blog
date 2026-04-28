@@ -37,7 +37,9 @@ const {
 const roleOptions = ref([])
 
 onMounted(() => {
-  api.getRoleOption().then(resp => roleOptions.value = resp.data)
+  api.getRoleOption().then(resp => {
+    roleOptions.value = (resp.data || []).map(r => ({ label: r.label, value: r.id }))
+  })
   $table.value?.handleSearch()
 })
 

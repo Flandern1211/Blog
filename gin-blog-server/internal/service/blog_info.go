@@ -88,9 +88,12 @@ func (s *blogInfoService) Report(c *gin.Context) error {
 	rdb := c.MustGet(global.CTX_RDB).(*global.RedisClient)
 	ipAddress := utils.IP.GetIpAddress(c)
 	userAgent := utils.IP.GetUserAgent(c)
-	browser := userAgent.Name + " " + userAgent.Version.String()
-	os := userAgent.OS + " " + userAgent.OSVersion.String()
-	uuid := utils.MD5(ipAddress + browser + os)
+	var uuid string
+	if userAgent != nil {
+		uuid = utils.MD5(ipAddress + userAgent.Name + " " + userAgent.Version.String() + userAgent.OS + " " + userAgent.OSVersion.String())
+	} else {
+		uuid = utils.MD5(ipAddress)
+	}
 
 	ctx := context.Background()
 

@@ -8,8 +8,12 @@ import (
 	"gin-blog/internal/repository"
 	"strconv"
 
+	"errors"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	bizErr "gin-blog/pkg/errors"
 )
 
 type ArticleService interface {
@@ -53,7 +57,7 @@ func NewArticleService(repo repository.ArticleRepository, interactRepo repositor
 // Article implementations
 func (s *articleService) GetList(c *gin.Context, query request.ArticleQuery) ([]response.ArticleVO, int64, error) {
 	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	list, total, err := s.repo.GetList(db, query.Page, query.Size, query.Title, query.CategoryId, query.TagId, query.Type, query.Status, query.IsDelete)
+	list, total, err := s.repo.GetList(db, query.GetPage(), query.GetSize(), query.Title, query.CategoryId, query.TagId, query.Type, query.Status, query.IsDelete)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -130,7 +134,7 @@ func (s *articleService) entityToVO(article entity.Article) response.ArticleVO {
 
 func (s *articleService) GetBlogArticleList(c *gin.Context, query request.FArticleQuery) ([]response.ArticleVO, int64, error) {
 	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	list, total, err := s.repo.GetBlogArticleList(db, query.Page, query.Size, query.CategoryId, query.TagId)
+	list, total, err := s.repo.GetBlogArticleList(db, query.GetPage(), query.GetSize(), query.CategoryId, query.TagId)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -148,11 +152,16 @@ func (s *articleService) GetBlogArticle(c *gin.Context, id int) (*response.BlogA
 
 	article, err := s.repo.GetBlogArticle(db, id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, bizErr.ErrNotFound
+		}
 		return nil, err
 	}
 
 	vo := &response.BlogArticleVO{
-		Article: *article,
+		Article:           *article,
+		RecommendArticles: make([]response.RecommendArticleVO, 0),
+		NewestArticles:    make([]response.RecommendArticleVO, 0),
 	}
 
 	recommendList, _ := s.repo.GetRecommendList(db, id, 6)
@@ -202,7 +211,7 @@ func (s *articleService) GetBlogArticle(c *gin.Context, id int) (*response.BlogA
 // Category implementations
 func (s *articleService) GetCategoryList(c *gin.Context, query request.CategoryQuery) ([]response.CategoryVO, int64, error) {
 	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	list, total, err := s.repo.GetCategoryList(db, query.Page, query.Size, query.Keyword)
+	list, total, err := s.repo.GetCategoryList(db, query.GetPage(), query.GetSize(), query.Keyword)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -242,7 +251,7 @@ func (s *articleService) GetCategoryOption(c *gin.Context) ([]response.OptionVO,
 // Tag implementations
 func (s *articleService) GetTagList(c *gin.Context, query request.TagQuery) ([]response.TagVO, int64, error) {
 	db := c.MustGet(global.CTX_DB).(*gorm.DB)
-	list, total, err := s.repo.GetTagList(db, query.Page, query.Size, query.Keyword)
+	list, total, err := s.repo.GetTagList(db, query.GetPage(), query.GetSize(), query.Keyword)
 	if err != nil {
 		return nil, 0, err
 	}

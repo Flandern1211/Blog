@@ -12,15 +12,14 @@ type UserInfoVO struct {
 }
 
 type UserVO struct {
-	ID            int            `json:"id"`
-	UserInfoId    int            `json:"user_info_id"`
-	Avatar        string         `json:"avatar"`
-	Nickname      string         `json:"nickname"`
-	Roles         []*entity.Role `json:"roles"`
-	LoginType     int            `json:"login_type"`
-	IpAddress     string         `json:"ip_address"`
-	IpSource      string         `json:"ip_source"`
-	CreatedAt     time.Time      `json:"created_at"`
-	LastLoginTime *time.Time     `json:"last_login_time"`
-	IsDisable     bool           `json:"is_disable"`
+	ID            int              `json:"id"`
+	UserInfoId    int              `json:"user_info_id"`
+	Info          *entity.UserInfo `json:"info"`
+	Roles         []*entity.Role   `json:"roles"`
+	LoginType     int              `json:"login_type"`
+	IpAddress     string           `json:"ip_address"`
+	IpSource      string           `json:"ip_source"`
+	CreatedAt     time.Time        `json:"created_at"`
+	LastLoginTime *time.Time       `json:"last_login_time"`
+	IsDisable     bool             `json:"is_disable"`
 }
