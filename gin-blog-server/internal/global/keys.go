@@ -3,11 +3,12 @@ package g
 // Redis Key
 
 const (
-	EMAIL_CODE   = "email_code:"   // 邮箱验证码
-	ONLINE_USER  = "online_user:"  // 在线用户
-	OFFLINE_USER = "offline_user:" // 强制下线用户
-	VISITOR_AREA = "visitor_area"  // 地域统计
-	VIEW_COUNT   = "view_count"    // 访问数量
+	EMAIL_CODE      = "email_code:"   // 邮箱验证码
+	ONLINE_USER     = "online_user:"  // 在线用户
+	OFFLINE_USER    = "offline_user:" // 强制下线用户
+	TOKEN_WHITELIST = "token:"        // token 白名单, key: token:<md5(token)>, value: user_id
+	VISITOR_AREA    = "visitor_area"  // 地域统计
+	VIEW_COUNT      = "view_count"    // 访问数量
 
 	KEY_UNIQUE_VISITOR_SET = "unique_visitor" // 唯一用户记录 set
 

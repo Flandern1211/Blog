@@ -128,7 +128,7 @@ func (r *authRepository) CheckUserHasResource(db *gorm.DB, userId int, url, meth
 		Joins("JOIN resource ON resource.id = role_resource.resource_id").
 		Where("user_auth_role.user_auth_id = ?", userId).
 		Where("resource.url = ?", url).
-		Where("resource.request_method = ?", method).
+		Where("resource.method = ?", method).
 		Count(&count).Error
 	if err != nil {
 		return false, err

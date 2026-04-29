@@ -16,8 +16,6 @@ func NewOSS() OSS {
 	switch g.GetConfig().Upload.OssType {
 	case "local":
 		return &Local{}
-	case "qiniu":
-		return &Qiniu{}
 	default:
 		return &Local{}
 	}

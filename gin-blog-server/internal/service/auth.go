@@ -24,6 +24,7 @@ type AuthService interface {
 	VerifyCode(c *gin.Context, code string) error
 	Logout(c *gin.Context, authId int) error
 	SendCode(c *gin.Context, email string) error
+	GetUserAuthById(c *gin.Context, id int) (*entity.UserAuth, error)
 }
 
 type authService struct {
@@ -91,6 +92,10 @@ func (s *authService) buildLoginVO(c *gin.Context, userAuth *entity.UserAuth, us
 		return nil, pkgErrors.NewDefault(pkgErrors.CodeTokenCreateErr)
 	}
 
+	// 将 token 存入 Redis 白名单, TTL = JWT 过期时间
+	tokenKey := g.TOKEN_WHITELIST + utils.MD5(token)
+	rdb.Set(rctx, tokenKey, userAuth.ID, time.Duration(conf.Expire)*time.Hour)
+
 	db := c.MustGet(g.CTX_DB).(*gorm.DB)
 	err = s.repo.UpdateUserLoginInfo(db, userAuth.ID, ipAddress, ipSource)
 	if err != nil {
@@ -141,9 +146,24 @@ func (s *authService) AdminLogin(c *gin.Context, req request.LoginReq) (*respons
 func (s *authService) Logout(c *gin.Context, authId int) error {
 	rdb := c.MustGet(g.CTX_RDB).(*g.RedisClient)
 	rctx := c.Request.Context()
+
+	// 清除在线状态
 	onlineKey := g.ONLINE_USER + strconv.Itoa(authId)
 	rdb.Del(rctx, onlineKey)
+
+	// 从 Redis 白名单中删除 token
+	authHeader := c.Request.Header.Get("Authorization")
+	if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+		tokenStr := authHeader[7:]
+		rdb.Del(rctx, g.TOKEN_WHITELIST+utils.MD5(tokenStr))
+	}
+
 	return nil
+}
+
+func (s *authService) GetUserAuthById(c *gin.Context, id int) (*entity.UserAuth, error) {
+	db := c.MustGet(g.CTX_DB).(*gorm.DB)
+	return s.repo.GetUserAuthInfoById(db, id)
 }
 
 func (s *authService) SendCode(c *gin.Context, email string) error {

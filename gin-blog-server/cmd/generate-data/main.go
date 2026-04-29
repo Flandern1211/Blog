@@ -138,6 +138,7 @@ func generateDefaultRolesAndUsers(db *gorm.DB) {
 		{
 			Username: "admin",
 			Password: pwd,
+			IsSuper:  true,
 			UserInfo: &entity.UserInfo{
 				Nickname: "admin",
 				Avatar:   "https://www.bing.com/rp/ar_9isCNU2Q-VG1yEDDHnx8HAFQ.png",

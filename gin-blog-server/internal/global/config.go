@@ -64,18 +64,9 @@ type Config struct {
 	}
 	Upload struct {
 		// Size      int    // 文件上传的最大值
-		OssType   string // local | qiniu
+		OssType   string // local
 		Path      string // 本地文件访问路径
 		StorePath string // 本地文件存储路径
-	}
-	Qiniu struct {
-		ImgPath       string // 外链链接
-		Zone          string // 存储区域
-		Bucket        string // 空间名称
-		AccessKey     string // 秘钥AK
-		SecretKey     string // 秘钥SK
-		UseHTTPS      bool   // 是否使用https
-		UseCdnDomains bool   // 上传是否使用 CDN 上传加速
 	}
 }
 
@@ -111,28 +102,16 @@ func ReadConfig(path string) *Config {
 // 数据库类型
 func (*Config) DbType() string {
 	if Conf.Server.DbType == "" {
-		Conf.Server.DbType = "sqlite"
+		Conf.Server.DbType = "mysql"
 	}
 	return Conf.Server.DbType
 }
 
 // 数据库连接字符串
 func (*Config) DbDSN() string {
-	switch Conf.Server.DbType {
-	case "mysql":
-		conf := Conf.Mysql
-		return fmt.Sprintf(
-			"%s:%s@tcp(%s:%s)/%s?%s",
-			conf.Username, conf.Password, conf.Host, conf.Port, conf.Dbname, conf.Config,
-		)
-	case "sqlite":
-		return Conf.SQLite.Dsn
-	// 默认使用 sqlite, 并且使用内存数据库
-	default:
-		Conf.Server.DbType = "sqlite"
-		if Conf.SQLite.Dsn == "" {
-			Conf.SQLite.Dsn = "file::memory:"
-		}
-		return Conf.SQLite.Dsn
-	}
+	conf := Conf.Mysql
+	return fmt.Sprintf(
+		"%s:%s@tcp(%s:%s)/%s?%s",
+		conf.Username, conf.Password, conf.Host, conf.Port, conf.Dbname, conf.Config,
+	)
 }

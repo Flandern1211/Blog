@@ -128,6 +128,7 @@ func registerAdminHandler(r *gin.Engine) {
 
 	// !注意使用中间件的顺序
 	admin.Use(middleware.JWTAuth())
+	admin.Use(middleware.AdminOnly())
 	admin.Use(middleware.PermissionCheck())
 	admin.Use(middleware.OperationLog())
 	admin.Use(middleware.ListenOnline())

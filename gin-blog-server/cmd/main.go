@@ -38,7 +38,7 @@ func main() {
 	r.Use(middleware.WithCookieStore(conf.Session.Name, conf.Session.Salt))
 	ginblog.RegisterHandlers(r)
 
-	// 使用本地文件上传, 需要静态文件服务, 使用七牛云不需要
+	// 使用本地文件上传, 需要静态文件服务
 	if conf.Upload.OssType == "local" {
 		r.Static(conf.Upload.Path, conf.Upload.StorePath)
 	}
